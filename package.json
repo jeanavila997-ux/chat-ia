@@ -1,0 +1,16 @@
+{
+  "name": "chat-ia",
+  "version": "1.0.0",
+  "description": "Chat IA standalone (extraído do Mestre do PC V10) — interface de chat + proxy para o launcher",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "dependencies": {
+    "edge-tts": "^1.0.1"
+  }
+}
