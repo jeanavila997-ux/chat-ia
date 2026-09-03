@@ -34,9 +34,9 @@
     "autoOptimizer": false
   },
   "costTracking": "minimal",
-  "confidence": 0.8,
+  "confidence": 0.72,
   "detectedAt": "2026-09-03T10:53:18.566Z",
   "appliedAt": "2026-09-03T10:57:33.873Z",
   "userPlan": "accept-detected",
-  "rationale": "Git analysis: 22 tracked files, 1 branch (1 local, 1 remote), 2 commits (2 last 30d), 1 author (30d), low activity. Remote git (https://github.com/jeanavila997-ux/chat-ia.git): 1 remote branch, 1 remote author (30d), via cache. Solo, low-intensity product — branch profiles with token-saving focus."
+  "rationale": "Git analysis: 3480 tracked files, 1 branch (1 local, 1 remote), 3 commits (3 last 30d), 1 author (30d), low activity, ~3 KB git objects. Remote git (https://github.com/jeanavila997-ux/chat-ia.git): 1 remote branch, 1 remote author (30d), via cache. Solo, low-intensity product — branch profiles with token-saving focus."
 }
