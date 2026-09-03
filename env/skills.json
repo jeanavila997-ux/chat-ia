@@ -1,0 +1,149 @@
+{
+  "skills": [
+    {
+      "id": "diag",
+      "name": "Diagnóstico Rápido",
+      "command": "/diag",
+      "description": "Relatório rápido do PC (hardware, RAM, disco) via launcher",
+      "type": "launcher",
+      "launcher": "relatorio_rapido_do_pc"
+    },
+    {
+      "id": "pcinfo",
+      "name": "Info do Sistema",
+      "command": "/pcinfo",
+      "description": "Relatório completo: CPU, RAM, placa-mãe e sistema",
+      "type": "launcher",
+      "launcher": "relatorio_rapido_do_pc"
+    },
+    {
+      "id": "drives",
+      "name": "Espaço em Disco",
+      "command": "/drives",
+      "description": "Verificar espaço livre em todas as unidades",
+      "type": "launcher",
+      "launcher": "verificar_espaco_em_disco"
+    },
+    {
+      "id": "smart",
+      "name": "Saúde do Disco (SMART)",
+      "command": "/smart",
+      "description": "Verificar saúde SMART dos discos",
+      "type": "launcher",
+      "launcher": "verificar_saude_do_disco_smart"
+    },
+    {
+      "id": "temp",
+      "name": "Temperatura do CPU",
+      "command": "/temp",
+      "description": "Temperatura do processador via WMI",
+      "type": "launcher",
+      "launcher": "temperatura_do_cpu_wmi"
+    },
+    {
+      "id": "ram",
+      "name": "Otimizar RAM",
+      "command": "/ram",
+      "description": "Liberar memória RAM imediatamente",
+      "type": "launcher",
+      "launcher": "liberar_memoria_ram_imediatamente"
+    },
+    {
+      "id": "processos",
+      "name": "Processos Pesados",
+      "command": "/processos",
+      "description": "Top processos por uso de RAM",
+      "type": "launcher",
+      "launcher": "listar_processos_por_uso_de_ram"
+    },
+    {
+      "id": "rede",
+      "name": "Teste de Conexão",
+      "command": "/rede",
+      "description": "Testar conectividade com a internet",
+      "type": "launcher",
+      "launcher": "testar_conectividade_com_a_internet"
+    },
+    {
+      "id": "adaptadores",
+      "name": "Adaptadores de Rede",
+      "command": "/adaptadores",
+      "description": "Ver adaptadores e status de IP",
+      "type": "launcher",
+      "launcher": "ver_adaptadores_de_rede"
+    },
+    {
+      "id": "sfc",
+      "name": "Integridade SFC/DISM",
+      "command": "/sfc",
+      "description": "Verificar integridade dos arquivos de sistema",
+      "type": "launcher",
+      "launcher": "verificar_integridade_do_sistema_sfc_dism"
+    },
+    {
+      "id": "startups",
+      "name": "Startups do Sistema",
+      "command": "/startups",
+      "suggestion": "Reduzir programas na inicialização",
+      "description": "Listar programas que iniciam com o Windows",
+      "type": "launcher",
+      "launcher": "listar_startups_do_sistema"
+    },
+    {
+      "id": "tempuser",
+      "name": "Abrir TEMP",
+      "command": "/tempuser",
+      "description": "Abrir pasta TEMP do usuário no Explorer",
+      "type": "launcher",
+      "launcher": "abrir_temp_do_usuario"
+    },
+    {
+      "id": "limpeza_temp",
+      "name": "Limpar TEMP",
+      "command": "/limpeza_temp",
+      "description": "Limpar pasta TEMP do usuário (requer confirmação)",
+      "type": "launcher",
+      "launcher": "limpar_temp_usuario"
+    },
+    {
+      "id": "dns",
+      "name": "Limpar Cache DNS",
+      "command": "/dns",
+      "description": "Limpar cache DNS (requer confirmação)",
+      "type": "launcher",
+      "launcher": "limpar_cache_dns"
+    },
+    {
+      "id": "limpar",
+      "name": "Limpar Conversa",
+      "command": "/limpar",
+      "description": "Apagar mensagens da conversa atual",
+      "type": "action",
+      "action": "clear_chat"
+    },
+    {
+      "id": "tema",
+      "name": "Alternar Tema",
+      "command": "/tema",
+      "description": "Alternar entre tema claro e escuro",
+      "type": "action",
+      "action": "toggle_theme"
+    },
+    {
+      "id": "tts",
+      "name": "Falar Resposta",
+      "command": "/tts",
+      "description": "Ler em voz alta a última resposta da IA",
+      "type": "action",
+      "action": "tts_last"
+    },
+    {
+      "id": "pergunta",
+      "name": "Perguntar à IA",
+      "command": "/pergunta",
+      "description": "Prompt de diagnóstico completo respondido pela IA",
+      "type": "prompt",
+      "prompt": "Execute um diagnóstico completo do meu computador: verifique saúde do sistema, temperatura, disco e memória. Responda em formato de relatório com seções."
+    }
+  ]
+}

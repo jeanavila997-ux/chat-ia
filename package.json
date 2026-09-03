@@ -1,11 +1,12 @@
 {
   "name": "chat-ia",
-  "version": "1.0.0",
-  "description": "Chat IA standalone (extraído do Mestre do PC V10) — interface de chat + proxy para o launcher",
+  "version": "1.1.0",
+  "description": "Chat IA standalone — interface de chat multi-provedor (Ollama, OpenAI, Anthropic, Gemini, OpenRouter) + proxy para o launcher do Mestre do PC V10",
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node --watch server.js"
   },
   "engines": {
     "node": ">=22.13.0"

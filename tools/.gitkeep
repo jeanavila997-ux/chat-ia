@@ -1,0 +1,3 @@
+// tools/ — ferramentas do agente do Chat IA
+// Cada ferramenta é um módulo ES: { name, description, schema, run(args) }
+// Ver tools/README.md para o contrato.

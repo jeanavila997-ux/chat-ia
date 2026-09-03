@@ -1,0 +1,3 @@
+// providers/ — provedores LLM do Chat IA
+// Cada provedor implementa a interface comum: chat(payload) → Response (stream JSON-lines)
+// Ver providers/README.md para o contrato.

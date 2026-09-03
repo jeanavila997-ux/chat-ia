@@ -3,3 +3,10 @@ node_modules
 .DS_Store
 desktop.ini
 
+# Segredos — NUNCA versionar
+.env
+env/.env
+env/*.local.json
+
+# Estado/runtime
+data/

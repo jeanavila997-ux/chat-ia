@@ -870,6 +870,61 @@ body.sidebar-collapsed .sidebar:not(:hover):not(:focus-within) .section-title sp
 body.sidebar-collapsed .sidebar:not(:hover):not(:focus-within) .user-info { display: none; }
 body.sidebar-collapsed .sidebar:not(:hover):not(:focus-within) .brand { justify-content: center; }
 body.sidebar-collapsed .sidebar:not(:hover):not(:focus-within) .nav-item { justify-content: center; }
+
+/* Cabeçalhos de grupo de provedor no menu de modelos */
+.menu-group-header {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  padding: 7px 10px 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-top: 1px solid var(--border);
+}
+.menu-group-header:first-child { border-top: none; }
+
+/* Paleta de Skills (invocada com "/") */
+.skills-palette {
+  position: fixed;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 40px));
+  max-height: 340px;
+  background: var(--bg-secondary, #1e1e28);
+  border: 1px solid var(--border, #33334a);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.45);
+  display: flex;
+  flex-direction: column;
+  z-index: 900;
+  overflow: hidden;
+}
+.skills-palette-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px 6px;
+  font-size: 11px; font-weight: 700; color: var(--text-muted);
+  letter-spacing: .5px;
+}
+.skills-list { overflow-y: auto; padding: 4px 6px 6px; }
+.skill-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px; cursor: pointer;
+}
+.skill-item:hover, .skill-item.active {
+  background: var(--bg-hover, rgba(255,255,255,.06));
+}
+.skill-item .skill-cmd {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px; color: var(--accent, #7c6cff);
+  min-width: 92px;
+}
+.skill-item .skill-name { font-size: 13px; font-weight: 600; }
+.skill-item .skill-desc { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.skills-palette-footer {
+  padding: 6px 14px; border-top: 1px solid var(--border);
+  font-size: 10px; color: var(--text-muted);
+}
 </style>
 </head>
 <body>
@@ -968,6 +1023,18 @@ body.sidebar-collapsed .sidebar:not(:hover):not(:focus-within) .nav-item { justi
   </div>
 </main>
 
+<!-- Paleta de Skills (invocada com "/" no input) -->
+<div class="skills-palette" id="skillsPalette" style="display:none">
+  <div class="skills-palette-header">
+    <span>⚡ SKILLS</span>
+    <small id="skillsCount"></small>
+  </div>
+  <div class="skills-list" id="skillsList"></div>
+  <div class="skills-palette-footer">
+    <small>↑↓ navegar · Enter executar · Esc fechar</small>
+  </div>
+</div>
+
 <!-- Modal de Confirmação de Comando -->
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-card" id="confirmCard">
@@ -992,8 +1059,10 @@ DIRETRIZES:
 4. Seja estruturado: use tópicos, passos numerados e destaque termos técnicos em negrito ou código.`;
 
 const state = {
+  activeProvider: "ollama",
   activeModel: "",
   availableModels: [],
+  providers: [],
   isWaiting: false,
   abortController: null,
   currentChatId: null,
@@ -1027,6 +1096,129 @@ const btnNewChat = $("btnNewChat");
 const btnTopNewChat = $("btnTopNewChat");
 const btnClearHistory = $("btnClearHistory");
 
+// ===== Paleta de Skills (invocação com "/") =====
+const skillsPalette = $("skillsPalette");
+const skillsList = $("skillsList");
+const skillsCount = $("skillsCount");
+let skillsCatalog = [];
+let skillsFiltered = [];
+let skillsActiveIndex = 0;
+
+async function loadSkills() {
+  try {
+    const res = await fetch("/api/skills", { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) return;
+    const data = await res.json();
+    skillsCatalog = data.skills || [];
+  } catch {}
+}
+
+function renderSkillsPalette(filter = "") {
+  const q = filter.replace(/^\//, "").toLowerCase().trim();
+  skillsFiltered = skillsCatalog.filter((s) => {
+    if (!q) return true;
+    const hay = `${s.command || ""} ${s.name || ""} ${s.description || ""}`.toLowerCase();
+    return hay.includes(q);
+  });
+  skillsActiveIndex = 0;
+  skillsCount.textContent = `${skillsFiltered.length}/${skillsCatalog.length}`;
+  skillsList.innerHTML = "";
+  if (!skillsFiltered.length) {
+    skillsList.innerHTML = `<div style="padding:14px;color:var(--text-muted);font-size:12px;text-align:center">Nenhuma skill encontrada para "${escapeHtml(q)}"</div>`;
+    return;
+  }
+  skillsFiltered.forEach((s, i) => {
+    const item = document.createElement("div");
+    item.className = `skill-item ${i === skillsActiveIndex ? "active" : ""}`;
+    item.innerHTML = `
+      <span class="skill-cmd">${escapeHtml(s.command || "/" + s.id)}</span>
+      <span style="flex:1">
+        <div class="skill-name">${escapeHtml(s.name || s.id)}</div>
+        <div class="skill-desc">${escapeHtml(s.description || "")}</div>
+      </span>
+      <span style="font-size:10px;color:var(--text-muted)">${s.type === "launcher" ? "🖥️ exec" : s.type === "action" ? "⚡ ação" : "💬 prompt"}</span>`;
+    item.onclick = () => executeSkill(s);
+    item.onmouseenter = () => { skillsActiveIndex = i; highlightSkill(); };
+    skillsList.appendChild(item);
+  });
+}
+
+function highlightSkill() {
+  [...skillsList.children].forEach((el, i) => el.classList.toggle("active", i === skillsActiveIndex));
+  const active = skillsList.children[skillsActiveIndex];
+  if (active) active.scrollIntoView({ block: "nearest" });
+}
+
+function openSkillsPalette() { skillsPalette.style.display = "flex"; renderSkillsPalette(); }
+function closeSkillsPalette() { skillsPalette.style.display = "none"; }
+function isPaletteOpen() { return skillsPalette.style.display !== "none"; }
+
+async function executeSkill(skill) {
+  closeSkillsPalette();
+  promptInput.value = "";
+  promptInput.style.height = "48px";
+  showToast(`${skill.command} — ${skill.name}`, "info");
+
+  if (skill.type === "prompt" && skill.prompt) {
+    // injeta o prompt e envia como mensagem normal
+    promptInput.value = skill.prompt;
+    sendMessage();
+    return;
+  }
+
+  if (skill.type === "action") {
+    if (skill.action === "clear_chat") {
+      state.messages = [];
+      state.currentChatId = null;
+      messagesContainer.innerHTML = "";
+      heroWrapper.style.display = "flex";
+      messagesContainer.style.display = "none";
+      saveCurrentConversation();
+      showToast("Conversa limpa", "success");
+      return;
+    }
+    if (skill.action === "toggle_theme") {
+      btnTheme.click();
+      return;
+    }
+    if (skill.action === "tts_last") {
+      const last = [...state.messages].reverse().find((m) => m.role === "assistant");
+      if (last?.content) synthesizeTTS(last.content);
+      else showToast("Nenhuma resposta para falar", "error");
+      return;
+    }
+  }
+
+  if (skill.type === "launcher") {
+    // executa operação via launcher (whitelist) e mostra resultado como card de terminal
+    showToast(`⏳ Executando ${skill.name}...`, "info");
+    try {
+      const res = await fetch("/api/skills/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: skill.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || data.detail?.output || data.detail?.error || `HTTP ${res.status}`);
+      }
+      // mostra o output no chat como card de terminal
+      heroWrapper.style.display = "none";
+      messagesContainer.style.display = "flex";
+      addMessage(`🖥️ **${skill.name}** (\`${skill.command}\`)`, "ai", {
+        terminalOutput: data.output || "(sem output)",
+        success: true,
+        cmd: skill.command,
+      });
+      showToast(`✓ ${skill.name} concluída`, "success");
+    } catch (err) {
+      addMessage(`⚠️ **Skill ${skill.command} falhou:** ${err.message}`, "ai");
+      showToast(`Erro: ${err.message}`, "error");
+    }
+    return;
+  }
+}
+
 const confirmOverlay = $("confirmOverlay");
 const confirmCard = $("confirmCard");
 const confirmTitle = $("confirmTitle");
@@ -1035,12 +1227,6 @@ const confirmCmdText = $("confirmCmdText");
 const btnConfirmCancel = $("btnConfirmCancel");
 const btnConfirmOk = $("btnConfirmOk");
 let confirmResolver = null;
-
-// Auto-expand textarea
-promptInput.addEventListener("input", function() {
-  this.style.height = "auto";
-  this.style.height = (this.scrollHeight) + "px";
-});
 
 function closeAllMenus() {
   plusMenu.classList.remove("show");
@@ -1150,6 +1336,64 @@ async function checkStatus() {
 
 async function loadModels() {
   try {
+    // Catálogo multi-provedor do Chat IA (fallback: Ollama via proxy)
+    let providers = [];
+    try {
+      const res = await fetch("/llm/providers", { signal: AbortSignal.timeout(4000) });
+      if (res.ok) {
+        const data = await res.json();
+        providers = data.providers || [];
+      }
+    } catch {}
+
+    if (providers.length) {
+      state.providers = providers;
+      // provedor ativo ainda existe?
+      if (!providers.some((p) => p.id === state.activeProvider)) {
+        state.activeProvider = "ollama";
+        state.activeModel = "";
+      }
+      modelsMenu.innerHTML = "";
+      let currentGroup = null;
+      for (const p of providers) {
+        const header = document.createElement("div");
+        header.className = "menu-group-header";
+        header.textContent = `${p.label}${p.hasKey === false ? " — sem chave" : ""}`;
+        modelsMenu.appendChild(header);
+        currentGroup = p.id;
+        // item Auto por provedor
+        const autoItem = document.createElement("div");
+        autoItem.className = `menu-item ${state.activeProvider === p.id && !state.activeModel ? "selected" : ""}`;
+        autoItem.dataset.provider = p.id;
+        autoItem.dataset.model = "";
+        autoItem.innerHTML = `<span>🔀 Auto (${escapeHtml(p.label)})</span><small>${state.activeProvider === p.id && !state.activeModel ? "✓" : ""}</small>`;
+        autoItem.onclick = () => selectModel("", p.id);
+        modelsMenu.appendChild(autoItem);
+        // modelos do catálogo
+        try {
+          const mres = await fetch(`/llm/${p.id}/models`, { signal: AbortSignal.timeout(4000) });
+          if (mres.ok) {
+            const mdata = await mres.json();
+            const models = (mdata.models || []).map((m) => (typeof m === "string" ? m : m.name || m.model || m.id)).filter(Boolean);
+            for (const m of models.slice(0, 25)) {
+              const item = document.createElement("div");
+              item.className = `menu-item ${state.activeProvider === p.id && state.activeModel === m ? "selected" : ""}`;
+              item.dataset.provider = p.id;
+              item.dataset.model = m;
+              item.innerHTML = `<span>✨ ${escapeHtml(m)}</span><small>${state.activeProvider === p.id && state.activeModel === m ? "✓" : ""}</small>`;
+              item.onclick = () => selectModel(m, p.id);
+              modelsMenu.appendChild(item);
+            }
+          }
+        } catch {}
+      }
+      updateModelButton();
+      return;
+    }
+  } catch {}
+
+  // Fallback: comportamento antigo (só Ollama via /ollama/tags)
+  try {
     const res = await fetch("/ollama/tags", { headers: { "X-Mestre-Client": "v10-web" } });
     if (!res.ok) return;
     const data = await res.json();
@@ -1176,12 +1420,29 @@ async function loadModels() {
   } catch {}
 }
 
-function selectModel(model) {
+function updateModelButton() {
+  if (state.activeProvider === "ollama" && !state.activeModel) {
+    btnModelSelect.querySelector("span").textContent = "🔀 Auto";
+  } else {
+    const p = state.providers.find((x) => x.id === state.activeProvider);
+    const label = p ? p.label : state.activeProvider;
+    if (state.activeModel) {
+      const short = state.activeModel.split("/").pop().split(":")[0];
+      btnModelSelect.querySelector("span").textContent = `✨ ${short}`;
+    } else {
+      btnModelSelect.querySelector("span").textContent = `🔀 ${label}`;
+    }
+  }
+}
+
+function selectModel(model, provider = state.activeProvider || "ollama") {
+  state.activeProvider = provider;
   state.activeModel = model;
-  btnModelSelect.querySelector("span").textContent = model ? `✨ ${model.split(":")[0]}` : "🔀 Auto";
+  updateModelButton();
   loadModels();
   closeAllMenus();
-  showToast(model ? `Modelo alterado para: ${model}` : "Modo Automático selecionado", "info");
+  const pLabel = state.providers.find((x) => x.id === provider)?.label || provider;
+  showToast(model ? `${pLabel}: ${model}` : `${pLabel}: modo Automático`, "info");
 }
 
 function addMessage(text, role, extra = {}) {
@@ -1394,9 +1655,14 @@ async function sendMessage() {
       ],
     };
 
-    const res = await fetch("/ollama/chat", {
+    const provider = state.activeProvider || "ollama";
+    const endpoint = `/llm/${provider}/chat`; // rota multi-provedor (resolve model no Auto)
+    const headers = { "Content-Type": "application/json" };
+    if (provider === "ollama") headers["X-Mestre-Client"] = "v10-web";
+
+    const res = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Mestre-Client": "v10-web" },
+      headers,
       body: JSON.stringify(payload),
       signal: state.abortController.signal,
     });
@@ -1634,15 +1900,73 @@ btnMic.addEventListener("click", () => {
 
 btnSend.addEventListener("click", sendMessage);
 promptInput.addEventListener("keydown", (e) => {
+  // ===== Paleta de Skills ativa =====
+  if (isPaletteOpen()) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      skillsActiveIndex = Math.min(skillsActiveIndex + 1, skillsFiltered.length - 1);
+      highlightSkill();
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      skillsActiveIndex = Math.max(skillsActiveIndex - 1, 0);
+      highlightSkill();
+      return;
+    }
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      const s = skillsFiltered[skillsActiveIndex];
+      if (s) executeSkill(s);
+      return;
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeSkillsPalette();
+      return;
+    }
+    // qualquer outra tecla: continua filtrando (deixa o evento fluir)
+  }
+
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
+    // comando "/skill" digitado completo + Enter → executa direto
+    if (promptInput.value.trim().startsWith("/")) {
+      const typed = promptInput.value.trim().toLowerCase();
+      const exact = skillsCatalog.find((s) => (s.command || "").toLowerCase() === typed);
+      if (exact) { executeSkill(exact); return; }
+      const partial = skillsCatalog.find((s) => (s.command || "").toLowerCase().startsWith(typed));
+      if (partial) { executeSkill(partial); return; }
+      // não achou: deixa cair pro sendMessage normal (o modelo responde)
+    }
     sendMessage();
+  }
+});
+
+// abrir paleta ao digitar "/" (só no início do texto)
+promptInput.addEventListener("input", function() {
+  this.style.height = "auto";
+  this.style.height = (this.scrollHeight) + "px";
+  const v = this.value;
+  if (v.startsWith("/")) {
+    if (!isPaletteOpen()) openSkillsPalette();
+    renderSkillsPalette(v);
+  } else if (isPaletteOpen()) {
+    closeSkillsPalette();
+  }
+});
+
+// fechar paleta ao clicar fora
+document.addEventListener("click", (e) => {
+  if (isPaletteOpen() && !skillsPalette.contains(e.target) && e.target !== promptInput) {
+    closeSkillsPalette();
   }
 });
 
 document.addEventListener("DOMContentLoaded", () => {
   checkStatus();
   loadModels();
+  loadSkills();
   loadConversations();
   setInterval(checkStatus, 15000);
 });
