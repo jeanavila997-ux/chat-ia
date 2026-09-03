@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-03T10:53:18.585Z",
+  "enabled": true,
+  "thresholdPct": 50,
+  "scorePct": 35,
+  "level": "low",
+  "tier": "low",
+  "summary": "No per-skill cost data yet — enable Attribution Hooks (v2) or collect runs/transcripts. Enable Attribution v2 hooks for measured per-skill costs.",
+  "shouldInject": true
+}

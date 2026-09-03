@@ -1,0 +1,49 @@
+{
+  "computedAt": "2026-09-03T10:53:19.179Z",
+  "signals": [
+    {
+      "signal": "vscode_package_dep",
+      "detected": false
+    },
+    {
+      "signal": "ts_src_dir",
+      "detected": false
+    },
+    {
+      "signal": "github_workflows",
+      "detected": false
+    },
+    {
+      "signal": "terraform_files",
+      "detected": false
+    },
+    {
+      "signal": "azure_pipeline",
+      "detected": false
+    },
+    {
+      "signal": "kiro_dir",
+      "detected": true
+    },
+    {
+      "signal": "adx_kql_files",
+      "detected": false
+    },
+    {
+      "signal": "claude_skills_project",
+      "detected": false
+    },
+    {
+      "signal": "skills_library_dir",
+      "detected": false
+    },
+    {
+      "signal": "python_scripts",
+      "detected": false
+    }
+  ],
+  "skillBoosts": {
+    "cursor-kiro-extension-publishing": 15,
+    "vscode-extension-publishing": 15
+  }
+}

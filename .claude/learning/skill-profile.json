@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "computedAt": "2026-09-03T12:00:48.608Z",
+  "profiles": {
+    "deployment-practical": {
+      "skill": "deployment-practical",
+      "invocations": 0,
+      "successes": 0,
+      "successRate": 0,
+      "avgTokens": 0,
+      "avgCostUsd": 0,
+      "commonScenarios": [],
+      "qualityScore": 0,
+      "qualityDelta": 0,
+      "lastUpdated": "2026-09-03T12:00:48.608Z"
+    },
+    "file-style-conventions": {
+      "skill": "file-style-conventions",
+      "invocations": 0,
+      "successes": 0,
+      "successRate": 0,
+      "avgTokens": 0,
+      "avgCostUsd": 0,
+      "commonScenarios": [],
+      "qualityScore": 0,
+      "qualityDelta": 0,
+      "lastUpdated": "2026-09-03T12:00:48.608Z"
+    },
+    "self-learning": {
+      "skill": "self-learning",
+      "invocations": 0,
+      "successes": 0,
+      "successRate": 0,
+      "avgTokens": 0,
+      "avgCostUsd": 0,
+      "commonScenarios": [],
+      "qualityScore": 0,
+      "qualityDelta": 0,
+      "lastUpdated": "2026-09-03T12:00:48.608Z"
+    },
+    "skill-creator": {
+      "skill": "skill-creator",
+      "invocations": 0,
+      "successes": 0,
+      "successRate": 0,
+      "avgTokens": 0,
+      "avgCostUsd": 0,
+      "commonScenarios": [],
+      "qualityScore": 0,
+      "qualityDelta": 0,
+      "lastUpdated": "2026-09-03T12:00:48.608Z"
+    },
+    "skill-feedback-adaptation": {
+      "skill": "skill-feedback-adaptation",
+      "invocations": 0,
+      "successes": 0,
+      "successRate": 0,
+      "avgTokens": 0,
+      "avgCostUsd": 0,
+      "commonScenarios": [],
+      "qualityScore": 0,
+      "qualityDelta": 0,
+      "lastUpdated": "2026-09-03T12:00:48.608Z"
+    },
+    "skill-official-updater": {
+      "skill": "skill-official-updater",
+      "invocations": 0,
+      "successes": 0,
+      "successRate": 0,
+      "avgTokens": 0,
+      "avgCostUsd": 0,
+      "commonScenarios": [],
+      "qualityScore": 0,
+      "qualityDelta": 0,
+      "lastUpdated": "2026-09-03T12:00:48.608Z"
+    },
+    "skill-usage-insights": {
+      "skill": "skill-usage-insights",
+      "invocations": 0,
+      "successes": 0,
+      "successRate": 0,
+      "avgTokens": 0,
+      "avgCostUsd": 0,
+      "commonScenarios": [],
+      "qualityScore": 0,
+      "qualityDelta": 0,
+      "lastUpdated": "2026-09-03T12:00:48.608Z"
+    }
+  }
+}

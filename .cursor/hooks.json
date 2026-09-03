@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "hooks": {
+    "postToolUse": [
+      {
+        "command": "curl -sf -X POST -H \"Content-Type: application/json\" --data @- \"http://127.0.0.1:4895/hook/skill-invoke?agent=cursor&cwd=c%3A%5CUsers%5CJEANPC%5CChat-IA\" || true",
+        "matcher": "Skill|Read|read|fs_read|fileread|mcp__filesystem__read_file|mcp__filesystem__search_in_file|mcp__filesystem__search_files",
+        "timeout": 8
+      }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "curl -sf -X POST -H \"Content-Type: application/json\" --data @- \"http://127.0.0.1:4895/hook/prompt-context?agent=cursor&cwd=c%3A%5CUsers%5CJEANPC%5CChat-IA\" || true",
+        "timeout": 8
+      },
+      {
+        "command": "curl -sf -X POST -H \"Content-Type: application/json\" --data @- \"http://127.0.0.1:4895/hook/budget?agent=cursor&cwd=c%3A%5CUsers%5CJEANPC%5CChat-IA\" || true",
+        "timeout": 8
+      },
+      {
+        "command": "curl -sf -X POST -H \"Content-Type: application/json\" --data @- \"http://127.0.0.1:4895/hook/task-drift?agent=cursor&cwd=c%3A%5CUsers%5CJEANPC%5CChat-IA\" || true",
+        "timeout": 8
+      }
+    ]
+  }
+}

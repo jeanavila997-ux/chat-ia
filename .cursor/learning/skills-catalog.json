@@ -1,0 +1,632 @@
+{
+  "version": 1,
+  "generatedAt": "2026-09-03T10:53:18.646Z",
+  "workspacePath": "c:\\Users\\JEANPC\\Chat-IA",
+  "branch": "master",
+  "skills": [
+    {
+      "name": "task-evidence-report",
+      "description": "Evidence-based explanation of completed work - real diffs, real test output, real command results, diagrams only when they carry information, checks for leftover code from superseded approaches. Not a confident-sounding AI summary; built to survive a skeptical reviewer",
+      "detectGlobs": [
+        "**/.git/**"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "mcp-server-creation",
+      "description": "Build, wire, and debug a stdio MCP server bundled inside a VS Code extension (claude-skills-deployer pattern)",
+      "detectGlobs": [
+        "**/mcp-servers/**/*.js",
+        "**/mcpCli.ts",
+        "**/mcpOfficial.ts",
+        "**/resources/mcp-servers/**"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "terraform-plan-review",
+      "description": "Terraform plan/apply review and drift triage",
+      "detectGlobs": [
+        "**/*.tf",
+        "**/*.tfvars"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "azure-rbac-diagnostics",
+      "description": "Azure RBAC 403/AuthorizationFailed diagnostics",
+      "detectGlobs": [
+        "**/*.tf",
+        "**/azure-pipelines.yml",
+        "**/.gitlab-ci.yml",
+        "**/*azure*.yml",
+        "**/*azure*.yaml"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "adx-schema-check",
+      "description": "ADX/Kusto schema vs. code cross-check",
+      "detectGlobs": [
+        "**/*.kql",
+        "**/adx/**",
+        "**/*kusto*",
+        "**/adx-schema*"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "github-actions-ci",
+      "description": "GitHub Actions CI/CD — debug pipeline failures, reproduce lint/test/validate stages locally before pushing. Use when troubleshooting workflow failures, understanding GitHub Actions behavior, or preparing code for CI validation.",
+      "detectGlobs": [
+        "**/.github/workflows/*.yml",
+        "**/.github/workflows/*.yaml",
+        "**/.github/**/*.md",
+        "**/test/**",
+        "**/src/**",
+        "**/*.test.ts",
+        "**/*.test.js"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "aidlc-tracker",
+      "description": "AI-DLC methodology phase/stage tracking",
+      "detectGlobs": [
+        "**/docs/aidlc/**",
+        "**/aidlc-docs/**",
+        "**/AIDLC/**",
+        "**/.aidlc-docs/**"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "aidlc-doc-writer",
+      "description": "AI-DLC document generation (inception/construction/operations/verification)",
+      "detectGlobs": [
+        "**/docs/aidlc/**",
+        "**/aidlc-docs/**",
+        "**/AIDLC/**",
+        "**/.aidlc-docs/**"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "deployment-practical",
+      "description": "Deployment-first delivery: concrete architecture and IaC over theoretical advice; first-try deploy checklists. Use whenever deploying to Azure, creating infrastructure code, preparing Docker containers, or planning cloud deployments.",
+      "detectGlobs": [
+        "**/*.tf",
+        "**/*.bicep",
+        "**/azure.yaml",
+        "**/azure.yml",
+        "**/Dockerfile",
+        "**/Dockerfile.*",
+        "**/docker-compose*.yml",
+        "**/.gitlab-ci.yml",
+        "**/azure-pipelines.yml",
+        "**/.env*",
+        "**/deployment/**"
+      ],
+      "isRelevant": true,
+      "matchedGlobs": [
+        "**/.env*"
+      ],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "terraform-module-ops",
+      "description": "Terraform module map, state backend, safe-change workflow and drift guardrails",
+      "detectGlobs": [
+        "**/*.tf",
+        "**/*.tfvars"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "azure-resource-ops",
+      "description": "Azure CLI resource quick-reference and live diagnostics playbook",
+      "detectGlobs": [
+        "**/*.tf",
+        "**/azure-pipelines.yml",
+        "**/.gitlab-ci.yml",
+        "**/*azure*.yml",
+        "**/*azure*.yaml",
+        "**/*.bicep"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "self-learning",
+      "description": "Project-local accumulated-experience store: records run outcomes and learned fixes",
+      "detectGlobs": [
+        "**/*"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": true
+    },
+    {
+      "name": "gitlab-pipeline-ops",
+      "description": "Navigate and operate GitLab CI/CD pipeline projects (root .gitlab-ci.yml + .gitlab/ci/*.yml includes, manual gates, glab CLI)",
+      "detectGlobs": [
+        "**/.gitlab-ci.yml",
+        "**/.gitlab/ci/*.yml",
+        "**/.gitlab/**"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "cross-platform-scripting",
+      "description": "OS detection (Windows/macOS/Linux) and PowerShell version detection/adaptation for .ps1 and shell scripts",
+      "detectGlobs": [
+        "**/*.ps1",
+        "**/*.psm1",
+        "**/*.sh",
+        "**/*.cmd",
+        "**/*.bat"
+      ],
+      "isRelevant": true,
+      "matchedGlobs": [
+        "**/*.bat"
+      ],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "file-style-conventions",
+      "description": "No emoji outside Markdown files, and trailing newline at end of YAML files",
+      "detectGlobs": [
+        "**/*"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": true
+    },
+    {
+      "name": "skill-usage-insights",
+      "description": "Skill usage and KPI report from .claude/learning/runs.jsonl - which skills to keep, fix, add, or remove",
+      "detectGlobs": [
+        "**/.claude/learning/runs.jsonl",
+        "**/.claude/skills/**"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": true
+    },
+    {
+      "name": "extension-value-audit",
+      "description": "Honest, evidence-based verdict on whether the Claude Skills Manager extension itself (adaptive suggestions, task-focus, budget gating, MCP-Force, cross-agent sync, hooks pipeline) is delivering real value in this project - recorded telemetry vs. what the agent actually observed",
+      "detectGlobs": [
+        "**/.claude/learning/hook-health.jsonl",
+        "**/.claude/learning/task-skill-proposals.json",
+        "**/.claude/learning/skill-adoption.jsonl",
+        "**/.claude/learning/runs.jsonl"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "skill-feedback-adaptation",
+      "description": "Register user negative feedback on agent/skill behavior; propose skills for new tasks via task-skill-proposals.json",
+      "detectGlobs": [
+        "**/.claude/learning/skill-feedback.jsonl",
+        "**/.claude/learning/task-skill-proposals.json",
+        "**/.claude/learning/**"
+      ],
+      "isRelevant": true,
+      "matchedGlobs": [
+        "**/.claude/learning/**"
+      ],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": true
+    },
+    {
+      "name": "drawio-diagrams",
+      "description": "Create/edit architecture diagrams as .drawio files via the draw.io MCP server, including Azure architecture diagrams using the official Azure icon set",
+      "detectGlobs": [
+        "**/*.drawio",
+        "**/*.drawio.xml",
+        "**/diagrams/**",
+        "**/docs/diagrams/**",
+        "**/docs/architecture/**"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "vscode-extension-publishing",
+      "description": "Build, package, and publish a VS Code extension via @vscode/vsce - manifest fields, .vscodeignore, Extension Development Host testing, version bumps, publisher/PAT setup, common publish errors. Use when building VS Code extensions, preparing releases, or debugging vsce package/publish failures.",
+      "detectGlobs": [
+        "**/.vscodeignore",
+        "**/vsc-extension-quickstart.md",
+        "**/*.vsix",
+        "**/src/extension.ts",
+        "**/src/extension.js",
+        "**/extension/**",
+        "**/MARKETPLACE*.md"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "cursor-kiro-extension-publishing",
+      "description": "Publish a VS Code-compatible extension to Open VSX for Cursor and Kiro via ovsx - OVSX_PAT, namespace verification, same VSIX as Marketplace, publish scripts and common ovsx errors. Use when publishing to Open VSX, Cursor gallery, Kiro extension registry, or debugging ovsx publish failures.",
+      "detectGlobs": [
+        "**/PUBLISHING.md",
+        "**/publish-openvsx.js",
+        "**/.github/workflows/publish*.yml",
+        "**/00-extension-registries.md"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "skill-official-updater",
+      "description": "Check github.com/anthropics/skills for new/updated official Anthropic skills and offer to add or update them in skills_library/",
+      "detectGlobs": [
+        "**/*"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": true
+    },
+    {
+      "name": "brand-guidelines",
+      "description": "Apply Anthropic's official brand colors and typography to artifacts and designs",
+      "detectGlobs": [
+        "**/*"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "canvas-design",
+      "description": "Create visual art (posters, designs) as .png/.pdf using design philosophy guidance",
+      "detectGlobs": [
+        "**/*"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "claude-api",
+      "description": "Reference for the Claude API and Anthropic SDK (models, pricing, streaming, tool use, MCP, agents, caching, migration)",
+      "detectGlobs": [
+        "**/*"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "doc-coauthoring",
+      "description": "Structured workflow for co-authoring docs, proposals, specs, and decision docs",
+      "detectGlobs": [
+        "**/*.md",
+        "**/docs/**"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "docx",
+      "description": "Create, read, edit, and convert Word (.docx) documents",
+      "detectGlobs": [
+        "**/*.docx"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "frontend-design",
+      "description": "Guidance for distinctive, intentional visual design when building or reshaping UI",
+      "detectGlobs": [
+        "**/*"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "internal-comms",
+      "description": "Templates and guidance for internal communications - status reports, leadership updates, incident reports, FAQs",
+      "detectGlobs": [
+        "**/*.md"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "mcp-builder",
+      "description": "Guide for creating MCP servers (Python FastMCP or Node/TypeScript MCP SDK) that integrate external APIs",
+      "detectGlobs": [
+        "**/*"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "pdf",
+      "description": "Read, extract, merge, split, watermark, fill, encrypt, and OCR PDF files",
+      "detectGlobs": [
+        "**/pdf/**/*.pdf",
+        "**/reports/**/*.pdf",
+        "**/pdf*.py",
+        "**/pdf*.ts",
+        "**/pdf*.js",
+        "**/generate*pdf*",
+        "**/*pdf*generator*"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "pptx",
+      "description": "Create, read, edit, and convert PowerPoint (.pptx) presentations",
+      "detectGlobs": [
+        "**/*.pptx"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "profile-init",
+      "description": "Initialize a personal skill profile for the current git branch based on team position; agent picks skills from the live catalog",
+      "detectGlobs": [
+        "**/.claude/learning/profile-init-request.json",
+        "**/.claude/profile.local.json"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "skill-creator",
+      "description": "Create, edit, optimize, and benchmark Claude skills",
+      "detectGlobs": [
+        "**/*"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": true
+    },
+    {
+      "name": "theme-factory",
+      "description": "Apply or generate themes (colors/fonts) for artifacts - slides, docs, HTML pages",
+      "detectGlobs": [
+        "**/*"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "web-artifacts-builder",
+      "description": "Build elaborate multi-component HTML artifacts using React, Tailwind CSS, and shadcn/ui",
+      "detectGlobs": [
+        "**/*"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "webapp-testing",
+      "description": "Test and debug local web apps with Playwright - screenshots, browser logs, UI verification",
+      "detectGlobs": [
+        "**/*"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "xlsx",
+      "description": "Open, read, edit, create, and convert spreadsheet files (.xlsx, .xlsm, .csv, .tsv)",
+      "detectGlobs": [
+        "**/*.xlsx",
+        "**/*.xlsm",
+        "**/*.csv",
+        "**/*.tsv"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "azure-infra-preflight",
+      "description": "Pre-flight checklist before any Azure Terraform deploy — verify az login, detect SSH key type, check target resource group, validate Terraform version, and write subscription context",
+      "detectGlobs": [
+        "**/terraform/**/*.tf",
+        "**/*.tfvars",
+        "**/azure-pipelines.yml",
+        "**/*azure*.yml",
+        "**/*azure*.yaml"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "infra-cost-guard",
+      "description": "Estimate and gate on infrastructure running costs before deploying — detect expensive resource types in Terraform plan or live resource list, calculate hourly/daily/monthly estimates, warn before apply",
+      "detectGlobs": [
+        "**/terraform/**/*.tf",
+        "**/*.tfvars",
+        "**/main.tf",
+        "**/outputs.tf"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    },
+    {
+      "name": "vitest-extension-testing",
+      "description": "Run, debug, and interpret Vitest tests in the claude-skills-deployer VS Code extension — covers .test.ts, .bench.test.ts, .solo.test.ts patterns and xvfb-run integration",
+      "detectGlobs": [
+        "**/vitest.config.ts",
+        "**/*.bench.test.ts",
+        "**/*.solo.test.ts",
+        "**/src/**/*.test.ts"
+      ],
+      "isRelevant": false,
+      "matchedGlobs": [],
+      "installedInWorkspace": false,
+      "availableInGlobal": false,
+      "inLibrary": true,
+      "requiredForProfileInit": false
+    }
+  ]
+}

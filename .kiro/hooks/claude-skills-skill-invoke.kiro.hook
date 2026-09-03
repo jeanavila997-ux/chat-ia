@@ -1,0 +1,24 @@
+{
+  "name": "Claude Skills — skill invoke attribution",
+  "description": "Managed by Claude Skills Manager (claude-skills-skill-invoke)",
+  "version": "1",
+  "enabled": true,
+  "when": {
+    "type": "postToolUse",
+    "toolTypes": [
+      "Skill",
+      "skill",
+      "read",
+      "fs_read",
+      "fileread",
+      "mcp__filesystem__read_file",
+      "mcp__filesystem__search_in_file",
+      "mcp__filesystem__search_files"
+    ]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "curl -sf -X POST -H \"Content-Type: application/json\" --data @- \"http://127.0.0.1:4895/hook/skill-invoke?agent=kiro&cwd=c%3A%5CUsers%5CJEANPC%5CChat-IA\" || true",
+    "timeout": 8
+  }
+}

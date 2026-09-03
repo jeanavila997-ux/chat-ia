@@ -10,3 +10,4 @@ env/*.local.json
 
 # Estado/runtime
 data/
+.cache/

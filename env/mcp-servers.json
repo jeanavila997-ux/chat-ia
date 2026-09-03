@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "situ_design": {
+      "label": "Situ Design Editor MCP",
+      "transport": "sse",
+      "url": "http://127.0.0.1:7124/mcp",
+      "enabled": false
+    }
+  }
+}

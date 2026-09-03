@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "profileType": "solo-dev",
+  "detectedFrom": {
+    "gitRemotes": [
+      "https://github.com/jeanavila997-ux/chat-ia.git"
+    ],
+    "teamSize": "solo",
+    "aiTools": [
+      "claude"
+    ],
+    "budgetPattern": "none",
+    "hasSharedClaudeSkills": false,
+    "isGitRepo": true,
+    "branchCount": 1,
+    "trackedFileCount": 22,
+    "repoSizeKb": 0,
+    "commitsLast30d": 2,
+    "commitsTotal": 2,
+    "projectAgeDays": 0,
+    "authorCount30d": 1,
+    "activityLevel": "low",
+    "hasAidlcWorkflow": false,
+    "hasPendingProfileInit": false,
+    "remoteReachable": true,
+    "remoteOriginUrl": "https://github.com/jeanavila997-ux/chat-ia.git",
+    "remoteBranchCount": 1,
+    "remoteAuthors30d": 1,
+    "upstreamAhead": 0,
+    "upstreamBehind": 0,
+    "remoteProbeSource": "cache"
+  },
+  "enabledFeatures": {
+    "autoOptimizer": false
+  },
+  "costTracking": "minimal",
+  "confidence": 0.8,
+  "detectedAt": "2026-09-03T10:53:18.566Z",
+  "appliedAt": "2026-09-03T10:57:33.873Z",
+  "userPlan": "accept-detected",
+  "rationale": "Git analysis: 22 tracked files, 1 branch (1 local, 1 remote), 2 commits (2 last 30d), 1 author (30d), low activity. Remote git (https://github.com/jeanavila997-ux/chat-ia.git): 1 remote branch, 1 remote author (30d), via cache. Solo, low-intensity product — branch profiles with token-saving focus."
+}

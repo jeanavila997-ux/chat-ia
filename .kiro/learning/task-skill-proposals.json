@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "generatedAt": "2026-09-03T10:53:19.186Z",
+  "taskSummary": "Workspace-detected skills",
+  "proposals": [
+    {
+      "name": "deployment-practical",
+      "reason": "Workspace files match **/.env*",
+      "confidence": 50,
+      "installed": true,
+      "matchedGlobs": [
+        "**/.env*"
+      ],
+      "confidenceBreakdown": {
+        "semanticMatch": 50,
+        "workspaceAffinity": 0,
+        "repositoryAffinity": 0,
+        "adoptionSuccess": 0,
+        "enrichment": 0,
+        "penalty": 0
+      },
+      "whyText": "detected: **/.env*",
+      "estimatedMinutes": 20,
+      "acceptanceRate": -1,
+      "successRate": -1,
+      "successScore": 15,
+      "trend": "new"
+    },
+    {
+      "name": "skill-feedback-adaptation",
+      "reason": "Workspace files match **/.claude/learning/**",
+      "confidence": 50,
+      "installed": true,
+      "matchedGlobs": [
+        "**/.claude/learning/**"
+      ],
+      "confidenceBreakdown": {
+        "semanticMatch": 50,
+        "workspaceAffinity": 0,
+        "repositoryAffinity": 0,
+        "adoptionSuccess": 0,
+        "enrichment": 0,
+        "penalty": 0
+      },
+      "whyText": "detected: **/.claude/learning/**",
+      "estimatedMinutes": 5,
+      "acceptanceRate": -1,
+      "successRate": -1,
+      "successScore": 15,
+      "trend": "new"
+    }
+  ]
+}

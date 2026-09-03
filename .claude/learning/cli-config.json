@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-03T10:53:19.283Z",
+  "updatedBy": "extension",
+  "features": {
+    "autoOptimizer": false,
+    "sessionSkillAdaptation": true,
+    "autoApplyTaskProposals": true,
+    "deterministicTaskProposals": true,
+    "taskSkillFocus": true,
+    "taskDriftReproposal": true,
+    "branchProfiles": true,
+    "multiAgent": true,
+    "budgetControls": true,
+    "skillSetResolver": true,
+    "contextFocus": true,
+    "practicalFocus": true
+  },
+  "agents": {
+    "enabled": [
+      "claude",
+      "cursor",
+      "kiro",
+      "copilot"
+    ],
+    "hostAgent": "copilot"
+  },
+  "taskFocus": {
+    "enabled": true,
+    "maxActiveSkills": 12,
+    "minProposalConfidence": 50
+  },
+  "costDiscipline": {
+    "enabled": true,
+    "propagateToAllAgents": true
+  }
+}

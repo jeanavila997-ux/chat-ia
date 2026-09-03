@@ -1,0 +1,14 @@
+{
+  "name": "Claude Skills — task drift re-proposal",
+  "description": "Managed by Claude Skills Manager (claude-skills-task-drift)",
+  "version": "1",
+  "enabled": true,
+  "when": {
+    "type": "promptSubmit"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "curl -sf -X POST -H \"Content-Type: application/json\" --data @- \"http://127.0.0.1:4895/hook/task-drift?agent=kiro&cwd=c%3A%5CUsers%5CJEANPC%5CChat-IA\" || true",
+    "timeout": 8
+  }
+}

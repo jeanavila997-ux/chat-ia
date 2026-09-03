@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "computedAt": "2026-09-03T10:53:20.616Z",
+  "daysBack": 90,
+  "funnel": {
+    "daysBack": 90,
+    "proposed": 2,
+    "accepted": 2,
+    "rejected": 0,
+    "ignored": 0,
+    "invoked": 0,
+    "successful": 0,
+    "reused": 0,
+    "acceptanceRatePct": 100,
+    "invocationRatePct": 0,
+    "successRatePct": 0,
+    "reuseRatePct": 0,
+    "avgInvocationsPerAcceptedSkill": 0,
+    "globalAdoptionRatePct": 0,
+    "adoptionScore": 30,
+    "hasData": true
+  },
+  "quality": {
+    "proposed": 2,
+    "accepted": 2,
+    "successful": 0,
+    "precisionPct": 0,
+    "recallPct": 0,
+    "f1Pct": 0,
+    "hasData": true
+  }
+}

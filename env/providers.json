@@ -35,6 +35,12 @@
       "baseUrl": "https://api.groq.com/openai/v1",
       "envKey": "GROQ_API_KEY",
       "models": ["llama-3.3-70b-versatile", "qwen/qwen3-32b"]
+    },
+    "deepseek": {
+      "label": "DeepSeek",
+      "baseUrl": "https://api.deepseek.com",
+      "envKey": "DEEPSEEK_API_KEY",
+      "models": ["deepseek-chat", "deepseek-reasoner"]
     }
   }
 }

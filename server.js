@@ -1,27 +1,40 @@
-// Chat IA — servidor standalone
-// Serve a interface (index.html) e faz proxy das chamadas de API para o
-// launcher do Mestre do PC V10 (http://127.0.0.1:7777).
-// O proxy é server-side: o launcher só aceita "v10-web" vindo da origem dele,
-// então este servidor repassa as chamadas como se fosse um cliente local.
+// Chat IA — servidor standalone com suporte a Multi-Provedores, RAG, MCP, Áudio e Notebook
+// Serve a interface (index.html) e faz proxy seguro das chamadas de API para o launcher do Mestre do PC V10.
 
 import http from "node:http";
 import { readFile, stat, readdir } from "node:fs/promises";
-import { join, extname } from "node:path";
+import { join, extname, resolve, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
-import { tts } from "./node_modules/edge-tts/out/index.js";
+import { Readable } from "node:stream";
 import { loadEnv } from "./env/load-env.js";
 
-// Carrega env/.env (chaves) antes de qualquer uso — não sobrescreve o shell
+// Módulos especializados
+import { synthesizeTTSWithCache, VOICES } from "./src/audio/tts-service.js";
+import { transcribeAudio } from "./src/audio/stt-service.js";
+import { listTools, executeTool } from "./src/tools/registry.js";
+import { loadMCPServers, getMCPStatus } from "./src/mcp/mcp-tool-adapter.js";
+import { ingestDocument, queryRAG, getAugmentedPromptContext } from "./src/rag/rag-engine.js";
+import { defaultVectorStore } from "./src/rag/vector-store.js";
+import { runJavaScriptCell, runPowerShellCell } from "./src/notebook/kernel-runner.js";
+import { listNotebooks, getNotebook, saveNotebook } from "./src/notebook/session-manager.js";
+
+// Carrega variáveis de ambiente
 loadEnv();
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
-const PORT = Number(process.env.PORT || 7789);
+const PORT = Number(process.env.PORT || 7788);
 const LAUNCHER_URL = process.env.LAUNCHER_URL || "http://127.0.0.1:7777";
 
+// Inicializa servidores MCP configurados em segundo plano
+loadMCPServers().catch((e) => console.warn("[MCP] Erro ao carregar servidores:", e.message));
+
 // Catálogo de provedores LLM (env/providers.json)
-const providerCatalog = JSON.parse(
-  await readFile(join(__dirname, "env", "providers.json"), "utf8")
-);
+let providerCatalog = { default: "ollama", providers: {} };
+try {
+  providerCatalog = JSON.parse(await readFile(join(__dirname, "env", "providers.json"), "utf8"));
+} catch (e) {
+  console.warn("⚠ providers.json ausente/inválido:", e.message);
+}
 
 // Catálogo de skills (env/skills.json) — invocáveis no chat via "/"
 let skillCatalog = { skills: [] };
@@ -39,9 +52,12 @@ const MIME = {
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon",
   ".json": "application/json; charset=utf-8",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".webm": "audio/webm",
 };
 
-// Rotas de API consumidas pelo chat (relativas, mesma origem deste servidor)
+// Rotas de API consumidas pelo launcher V10
 const API_PREFIXES = [
   "/ping", "/ollama/", "/validate-command", "/run", "/run-status",
   "/memories", "/soul", "/security", "/operations", "/network",
@@ -51,54 +67,104 @@ function isApi(path) {
   return API_PREFIXES.some((p) => path === p || path.startsWith(p));
 }
 
-async function handleTTS(req, res) {
-  if (req.method !== "POST") {
-    res.writeHead(405, { "Content-Type": "application/json; charset=utf-8" });
-    return res.end(JSON.stringify({ error: "Method not allowed" }));
-  }
-  let body = "";
-  for await (const chunk of req) body += chunk;
-  let payload;
-  try {
-    payload = JSON.parse(body);
-  } catch {
-    res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
-    return res.end(JSON.stringify({ error: "Invalid JSON" }));
-  }
-  const { text, voice = "pt-BR-FranciscaNeural" } = payload;
-  if (!text || typeof text !== "string") {
-    res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
-    return res.end(JSON.stringify({ error: "Campo 'text' (string) obrigatório" }));
-  }
-  try {
-    const audioBuffer = await tts(text, { voice });
-    res.writeHead(200, {
-      "Content-Type": "audio/mpeg",
-      "Content-Length": audioBuffer.length,
-      "Cache-Control": "no-cache",
-      "Accept-Ranges": "bytes",
-    });
-    res.end(audioBuffer);
-  } catch (err) {
-    res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
-    res.end(JSON.stringify({ error: "Erro Edge TTS", detail: String(err.message || err) }));
-  }
-}
-
-// ===== Rotas de provedores LLM (/llm/*) =====
-// Cada provedor converte seu formato nativo para JSON-lines estilo Ollama,
-// assim o front (que já faz parse de chunk.message.content) funciona igual.
-
 function sendJson(res, status, obj) {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(obj));
 }
 
+// ===== Segurança de Origem (CORS Restrito a Localhost) =====
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  try {
+    const u = new URL(origin);
+    return (
+      u.hostname === "127.0.0.1" ||
+      u.hostname === "localhost" ||
+      u.hostname === "::1" ||
+      u.hostname === "0.0.0.0"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function applyCors(req, res) {
+  const origin = req.headers.origin;
+  if (isAllowedOrigin(origin)) {
+    if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Mestre-Client, Authorization");
+    return true;
+  }
+  return false;
+}
+
+// ===== Leitura de Corpo de Requisição =====
+async function readBody(req, limit = 20 * 1024 * 1024) {
+  const chunks = [];
+  let size = 0;
+  for await (const c of req) {
+    size += c.length;
+    if (size > limit) throw new Error("Requisição excede o tamanho limite permitido.");
+    chunks.push(c);
+  }
+  return Buffer.concat(chunks);
+}
+
+// ===== Áudio: TTS com Cache & Catálogo =====
+async function handleTTS(req, res) {
+  if (req.method !== "POST") {
+    return sendJson(res, 405, { error: "Método não permitido" });
+  }
+
+  let payload;
+  try {
+    const raw = await readBody(req);
+    payload = JSON.parse(raw.toString("utf8"));
+  } catch {
+    return sendJson(res, 400, { error: "JSON inválido" });
+  }
+
+  const { text, voice = "pt-BR-FranciscaNeural" } = payload;
+  if (!text || typeof text !== "string") {
+    return sendJson(res, 400, { error: "Campo 'text' obrigatório" });
+  }
+
+  try {
+    const { buffer, cached } = await synthesizeTTSWithCache(text, { voice });
+    res.writeHead(200, {
+      "Content-Type": "audio/mpeg",
+      "Content-Length": buffer.length,
+      "Cache-Control": "public, max-age=86400",
+      "X-From-Cache": cached ? "1" : "0",
+    });
+    res.end(buffer);
+  } catch (err) {
+    return sendJson(res, 500, { error: "Erro na síntese de voz", detail: err.message });
+  }
+}
+
+// ===== Áudio: STT (Transcrição de Voz) =====
+async function handleSTT(req, res) {
+  if (req.method !== "POST") {
+    return sendJson(res, 405, { error: "Método não permitido" });
+  }
+
+  try {
+    const audioBuffer = await readBody(req);
+    const mimeType = req.headers["content-type"] || "audio/webm";
+    const result = await transcribeAudio(audioBuffer, mimeType);
+    return sendJson(res, result.ok ? 200 : 400, result);
+  } catch (err) {
+    return sendJson(res, 500, { error: "Erro na transcrição", detail: err.message });
+  }
+}
+
+// ===== Provedores LLM & Streaming Real =====
 function providerConfig(id) {
   return providerCatalog.providers[id] || null;
 }
 
-// Um provedor está "disponível" se tem módulo em providers/ OU é o ollama (via proxy)
 async function availableProviderIds() {
   let hasModule = [];
   try {
@@ -109,50 +175,56 @@ async function availableProviderIds() {
   return new Set(["ollama", ...hasModule]);
 }
 
-function listProviders(res) {
-  return (async () => {
-    const avail = await availableProviderIds();
-    const providers = Object.entries(providerCatalog.providers).map(([id, p]) => ({
-      id,
-      label: p.label,
-      baseUrl: p.baseUrl,
-      hasKey: !p.envKey ? true : Boolean(process.env[p.envKey]),
-      available: avail.has(id) || (!p.envKey ? true : Boolean(process.env[p.envKey])),
-    }));
-    sendJson(res, 200, { default: providerCatalog.default, providers });
-  })();
+async function listProviders(res) {
+  const avail = await availableProviderIds();
+  const providers = Object.entries(providerCatalog.providers).map(([id, p]) => ({
+    id,
+    label: p.label,
+    baseUrl: p.baseUrl,
+    hasKey: !p.envKey ? true : Boolean(process.env[p.envKey]),
+    available: avail.has(id) || (!p.envKey ? true : Boolean(process.env[p.envKey])),
+  }));
+  sendJson(res, 200, { default: providerCatalog.default, providers });
 }
 
-function listAllModels(res) {
-  return (async () => {
-    const out = {};
-    for (const [id, p] of Object.entries(providerCatalog.providers)) {
-      out[id] = { label: p.label, hasKey: !p.envKey || Boolean(process.env[p.envKey]), models: p.models || [] };
-    }
-    sendJson(res, 200, out);
-  })();
-}
-
-async function readBody(req, limit = 16 * 1024 * 1024) {
-  const chunks = [];
-  let size = 0;
-  for await (const c of req) {
-    size += c.length;
-    if (size > limit) throw new Error("body too large");
-    chunks.push(c);
+async function listAllModels(res) {
+  const out = {};
+  for (const [id, p] of Object.entries(providerCatalog.providers)) {
+    out[id] = { label: p.label, hasKey: !p.envKey || Boolean(process.env[p.envKey]), models: p.models || [] };
   }
-  return Buffer.concat(chunks);
+  sendJson(res, 200, out);
 }
 
 async function handleProviderChat(req, res, providerId) {
   const cfg = providerConfig(providerId);
   if (!cfg) return sendJson(res, 404, { error: `Provedor desconhecido: ${providerId}` });
 
-  // ollama → repassa para o proxy do launcher (comportamento atual do front)
+  let raw;
+  try {
+    raw = JSON.parse((await readBody(req)).toString("utf8"));
+  } catch {
+    return sendJson(res, 400, { error: "JSON inválido" });
+  }
+
+  // Enriquecimento com RAG se habilitado
+  if (raw.useRAG) {
+    const lastUserMsg = (raw.messages || []).slice().reverse().find((m) => m.role === "user");
+    if (lastUserMsg?.content) {
+      const ragContext = await getAugmentedPromptContext(lastUserMsg.content, 3);
+      if (ragContext) {
+        const sysIndex = raw.messages.findIndex((m) => m.role === "system");
+        if (sysIndex >= 0) {
+          raw.messages[sysIndex].content += ragContext;
+        } else {
+          raw.messages.unshift({ role: "system", content: ragContext });
+        }
+      }
+    }
+  }
+
+  // Provedor Ollama (repassado ao proxy do Launcher ou direto ao Ollama)
   if (providerId === "ollama") {
     try {
-      const raw = JSON.parse((await readBody(req)).toString("utf8"));
-      // Modo Auto: sem model → usa o primeiro modelo disponível do Ollama
       if (!raw.model) {
         const tags = await fetch(`${LAUNCHER_URL}/ollama/tags`, {
           headers: { "X-Mestre-Client": "v10-web" },
@@ -165,48 +237,52 @@ async function handleProviderChat(req, res, providerId) {
       }
       const upstream = await fetch(`${LAUNCHER_URL}/ollama/chat`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Mestre-Client": "v10-web",
-        },
+        headers: { "Content-Type": "application/json", "X-Mestre-Client": "v10-web" },
         body: JSON.stringify(raw),
       });
+
       res.writeHead(upstream.status, {
         "Content-Type": "application/x-ndjson; charset=utf-8",
         "Cache-Control": "no-cache",
       });
-      const buf = Buffer.from(await upstream.arrayBuffer());
-      return res.end(buf);
+
+      // Streaming em tempo real (zero latência e sem buffer em memória)
+      Readable.fromWeb(upstream.body).pipe(res);
+      return;
     } catch (err) {
-      return sendJson(res, 502, { error: "Launcher offline", detail: String(err.message || err) });
+      return sendJson(res, 502, { error: "Launcher ou Ollama offline", detail: err.message });
     }
   }
 
-  // demais provedores: carrega módulo dinamicamente
+  // Demais provedores dinâmicos
   const apiKey = cfg.envKey ? process.env[cfg.envKey] : null;
   if (cfg.envKey && !apiKey) {
     return sendJson(res, 400, { error: `Chave ${cfg.envKey} não configurada em env/.env` });
   }
+
   let mod;
   try {
     mod = await import(`./providers/${providerId}.js`);
   } catch {
-    return sendJson(res, 501, { error: `Provedor ${providerId} ainda não implementado (crie providers/${providerId}.js)` });
+    return sendJson(res, 501, { error: `Provedor ${providerId} ainda não implementado` });
   }
 
   try {
-    const body = JSON.parse((await readBody(req)).toString("utf8"));
-    const upstream = await mod.streamChat(body, { ...cfg, apiKey });
+    const upstream = await mod.streamChat(raw, { ...cfg, apiKey });
     if (!upstream.ok) {
       const errTxt = await upstream.text();
       return sendJson(res, 502, { error: `${providerId} HTTP ${upstream.status}`, detail: errTxt.slice(0, 300) });
     }
-    // streaming: repassa o corpo já convertido (JSON-lines) direto ao cliente
-    res.writeHead(200, { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-cache" });
-    const buf = Buffer.from(await upstream.arrayBuffer());
-    return res.end(buf);
+
+    res.writeHead(200, {
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      "Cache-Control": "no-cache",
+    });
+
+    // Transmissão direta dos chunks em tempo real para o cliente
+    Readable.fromWeb(upstream.body).pipe(res);
   } catch (err) {
-    return sendJson(res, 500, { error: `Erro no provedor ${providerId}`, detail: String(err.message || err) });
+    return sendJson(res, 500, { error: `Erro no provedor ${providerId}`, detail: err.message });
   }
 }
 
@@ -214,9 +290,8 @@ async function handleProviderModels(req, res, providerId) {
   const cfg = providerConfig(providerId);
   if (!cfg) return sendJson(res, 404, { error: `Provedor desconhecido: ${providerId}` });
   if (providerId === "ollama") { req.url = "/ollama/tags"; return proxy(req, res); }
-  let mod;
   try {
-    mod = await import(`./providers/${providerId}.js`);
+    const mod = await import(`./providers/${providerId}.js`);
     if (typeof mod.listModels === "function") {
       const models = await mod.listModels({ ...cfg, apiKey: cfg.envKey ? process.env[cfg.envKey] : null });
       return sendJson(res, 200, { models });
@@ -225,62 +300,11 @@ async function handleProviderModels(req, res, providerId) {
   return sendJson(res, 200, { models: cfg.models || [] });
 }
 
-// ===== Skills (/api/skills) =====
-// Executa skill do tipo "launcher": valida via /validate-command e roda via /run
-// do launcher do V10 (mesmo fluxo do front, com confirmação no cliente).
-async function handleSkillRun(req, res) {
-  let body;
-  try {
-    body = JSON.parse((await readBody(req)).toString("utf8"));
-  } catch {
-    return sendJson(res, 400, { error: "Invalid JSON" });
-  }
-  const skill = skillCatalog.skills?.find((s) => s.id === body.id || s.command === body.id);
-  if (!skill) return sendJson(res, 404, { error: `Skill desconhecida: ${body.id}` });
-
-  if (skill.type === "launcher" && skill.launcher) {
-    // Executa operação da whitelist via /run com {id} + polling /run-status
-    try {
-      const runRes = await fetch(`${LAUNCHER_URL}/run`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Mestre-Client": "v10-web" },
-        body: JSON.stringify({ id: skill.launcher }),
-      });
-      const runData = await runRes.json().catch(() => ({}));
-      if (!runRes.ok || !runData.jobId) {
-        return sendJson(res, runRes.status, { error: "Execução falhou", detail: runData });
-      }
-      // polling do job (timeout 90s)
-      const deadline = Date.now() + 90000;
-      let job = null;
-      while (Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, 1000));
-        const stRes = await fetch(`${LAUNCHER_URL}/run-status?id=${encodeURIComponent(runData.jobId)}`, {
-          headers: { "X-Mestre-Client": "v10-web" },
-        });
-        if (!stRes.ok) break;
-        const stData = await stRes.json().catch(() => ({}));
-        if (stData.state !== "running") { job = stData; break; }
-      }
-      if (!job) return sendJson(res, 504, { error: "Timeout aguardando o comando" });
-      return sendJson(res, 200, {
-        ok: job.success === true,
-        jobId: runData.jobId,
-        state: job.state,
-        output: job.output || "",
-      });
-    } catch (err) {
-      return sendJson(res, 502, { error: "Launcher offline", detail: String(err.message || err) });
-    }
-  }
-
-  return sendJson(res, 400, { error: `Skill ${skill.id} não é executável no servidor (tipo: ${skill.type})` });
-}
-
+// ===== Proxy Seguro para o Launcher do Mestre do PC =====
 async function proxy(req, res) {
   const url = new URL(req.url, LAUNCHER_URL);
   const headers = { ...req.headers, host: url.host };
-  delete headers.origin; // server-side: launcher aceita v10-web sem origin
+  delete headers.origin;
   delete headers.referer;
 
   try {
@@ -305,19 +329,26 @@ async function proxy(req, res) {
     const buf = Buffer.from(await upstream.arrayBuffer());
     res.end(buf);
   } catch (err) {
-    res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
-    res.end(JSON.stringify({ error: "Launcher offline", detail: String(err.message || err) }));
+    return sendJson(res, 502, { error: "Launcher offline", detail: err.message });
   }
 }
 
+// ===== Servidor de Arquivos Estáticos com Proteção contra Path Traversal =====
 async function serveStatic(req, res, path) {
   try {
-    let file = path === "/" ? "/index.html" : path;
-    const full = join(__dirname, file);
-    // proteção path traversal
-    if (!full.startsWith(__dirname)) throw new Error("forbidden");
+    const cleanPath = decodeURIComponent(path.split("?")[0]);
+    const file = cleanPath === "/" ? "/index.html" : cleanPath;
+    const full = resolve(join(__dirname, file));
+    const base = normalize(__dirname);
+
+    if (!full.startsWith(base)) {
+      res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
+      return res.end("403 — Acesso negado");
+    }
+
     const st = await stat(full);
-    if (!st.isFile()) throw new Error("not a file");
+    if (!st.isFile()) throw new Error("Não é arquivo");
+
     const data = await readFile(full);
     res.writeHead(200, {
       "Content-Type": MIME[extname(full).toLowerCase()] || "application/octet-stream",
@@ -326,13 +357,103 @@ async function serveStatic(req, res, path) {
     res.end(data);
   } catch {
     res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-    res.end("404 — não encontrado no Chat IA");
+    res.end("404 — Não encontrado no Chat IA");
   }
 }
 
-const server = http.createServer((req, res) => {
+// ===== Servidor HTTP Principal =====
+const server = http.createServer(async (req, res) => {
+  // 1. Validação de CORS
+  applyCors(req, res);
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    return res.end();
+  }
+
   const path = req.url.split("?")[0];
+
+  // 2. Roteamento de Áudio
   if (path === "/api/tts") return handleTTS(req, res);
+  if (path === "/api/tts/voices") return sendJson(res, 200, { voices: VOICES });
+  if (path === "/api/audio/transcribe") return handleSTT(req, res);
+
+  // 3. Roteamento de Ferramentas (Tools & MCP)
+  if (path === "/api/tools" && req.method === "GET") {
+    return sendJson(res, 200, { tools: listTools() });
+  }
+  if (path === "/api/tools/run" && req.method === "POST") {
+    try {
+      const body = JSON.parse((await readBody(req)).toString("utf8"));
+      const result = await executeTool(body.name, body.args || {}, { confirmed: body.confirmed === true });
+      return sendJson(res, 200, result);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err.message });
+    }
+  }
+  if (path === "/api/mcp/status" && req.method === "GET") {
+    return sendJson(res, 200, { servers: getMCPStatus() });
+  }
+
+  // 4. Roteamento de RAG (Base de Conhecimento & Embeddings)
+  if (path === "/api/rag/ingest" && req.method === "POST") {
+    try {
+      const body = JSON.parse((await readBody(req)).toString("utf8"));
+      const result = await ingestDocument(body.title || "Documento", body.text, body.metadata);
+      return sendJson(res, 200, result);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err.message });
+    }
+  }
+  if (path === "/api/rag/query" && req.method === "POST") {
+    try {
+      const body = JSON.parse((await readBody(req)).toString("utf8"));
+      const result = await queryRAG(body.query, body.topK || 3);
+      return sendJson(res, 200, result);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err.message });
+    }
+  }
+  if (path === "/api/rag/documents" && req.method === "GET") {
+    const docs = await defaultVectorStore.listDocuments();
+    return sendJson(res, 200, { documents: docs });
+  }
+
+  // 5. Roteamento de Notebook Interativo
+  if (path === "/api/notebook/run" && req.method === "POST") {
+    try {
+      const body = JSON.parse((await readBody(req)).toString("utf8"));
+      if (body.type === "javascript" || body.type === "js") {
+        const result = await runJavaScriptCell(body.code || "");
+        return sendJson(res, 200, result);
+      } else if (body.type === "powershell" || body.type === "ps1") {
+        const result = await runPowerShellCell(body.code || "", LAUNCHER_URL);
+        return sendJson(res, 200, result);
+      }
+      return sendJson(res, 400, { ok: false, error: `Tipo de célula '${body.type}' não suportado.` });
+    } catch (err) {
+      return sendJson(res, 500, { ok: false, error: err.message });
+    }
+  }
+  if (path === "/api/notebook/list" && req.method === "GET") {
+    const nbs = await listNotebooks();
+    return sendJson(res, 200, { notebooks: nbs });
+  }
+  if (path === "/api/notebook/get" && req.method === "GET") {
+    const u = new URL(req.url, "http://localhost");
+    const nb = await getNotebook(u.searchParams.get("id") || "default");
+    return sendJson(res, 200, nb);
+  }
+  if (path === "/api/notebook/save" && req.method === "POST") {
+    try {
+      const body = JSON.parse((await readBody(req)).toString("utf8"));
+      const result = await saveNotebook(body);
+      return sendJson(res, 200, result);
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: err.message });
+    }
+  }
+
+  // 6. Roteamento de Modelos LLM
   if (path === "/llm/providers") return listProviders(res);
   if (path === "/llm/models") return listAllModels(res);
   if (req.method === "POST" && path.startsWith("/llm/") && path.endsWith("/chat")) {
@@ -343,26 +464,19 @@ const server = http.createServer((req, res) => {
     const providerId = path.slice("/llm/".length, -"/models".length);
     return handleProviderModels(req, res, providerId);
   }
-  if (path === "/api/skills") {
-    sendJson(res, 200, skillCatalog);
-    return;
-  }
-  if (req.method === "POST" && path === "/api/skills/run") {
-    return handleSkillRun(req, res);
-  }
+
+  // 7. Skills
+  if (path === "/api/skills") return sendJson(res, 200, skillCatalog);
+
+  // 8. Proxy para APIs do Launcher
   if (isApi(path)) return proxy(req, res);
-  if (req.method === "OPTIONS") {
-    res.writeHead(204, {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, X-Mestre-Client",
-    });
-    return res.end();
-  }
+
+  // 9. Arquivos Estáticos
   return serveStatic(req, res, path);
 });
 
 server.listen(PORT, "127.0.0.1", () => {
-  console.log(`✅ Chat IA standalone em http://127.0.0.1:${PORT}`);
+  console.log(`✅ Chat IA em http://127.0.0.1:${PORT}`);
   console.log(`   Proxy para launcher: ${LAUNCHER_URL}`);
+  console.log(`   RAG, MCP, Áudio e Notebook ativos`);
 });

@@ -409,6 +409,7 @@ body::before {
   letter-spacing: -0.02em;
   background: linear-gradient(135deg, #ffffff 40%, var(--accent));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -925,6 +926,92 @@ body.sidebar-collapsed .sidebar:not(:hover):not(:focus-within) .nav-item { justi
   padding: 6px 14px; border-top: 1px solid var(--border);
   font-size: 10px; color: var(--text-muted);
 }
+
+/* RAG Active Pill */
+.action-pill.rag-on {
+  background: rgba(0, 255, 163, 0.15) !important;
+  border-color: var(--accent2) !important;
+  color: var(--accent2) !important;
+  box-shadow: 0 0 12px var(--accent2-glow);
+}
+
+/* Notebook Area */
+.notebook-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 24px 20px;
+  width: 100%;
+}
+.notebook-container {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+}
+.notebook-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.notebook-cell {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+.notebook-cell:focus-within {
+  border-color: rgba(0, 240, 255, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+.cell-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border);
+}
+.cell-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.cell-badge.javascript { background: rgba(247, 223, 30, 0.15); color: #f7df1e; }
+.cell-badge.powershell { background: rgba(0, 164, 255, 0.15); color: #00a4ff; }
+.cell-badge.markdown { background: rgba(0, 255, 163, 0.15); color: #00ffa3; }
+.cell-input {
+  width: 100%;
+  background: #04070e;
+  border: none;
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 13px;
+  padding: 12px 14px;
+  resize: vertical;
+  outline: none;
+  line-height: 1.5;
+  min-height: 70px;
+}
+.cell-output {
+  padding: 10px 14px;
+  background: #010306;
+  border-top: 1px solid var(--border);
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 12px;
+  color: #00ffa3;
+  max-height: 250px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+.cell-output.error { color: #ff4757; }
+.cell-meta { font-size: 11px; color: var(--text-muted); }
 </style>
 </head>
 <body>
@@ -936,6 +1023,9 @@ body.sidebar-collapsed .sidebar:not(:hover):not(:focus-within) .nav-item { justi
   </div>
   <div class="nav-group">
     <div class="nav-item active" id="btnNewChat"><span class="nav-icon">＋</span><span>Novo chat</span></div>
+    <div class="nav-item" id="btnNotebook"><span class="nav-icon">📓</span><span>Notebook REPL</span></div>
+    <div class="nav-item" id="btnRAG"><span class="nav-icon">📚</span><span>Base RAG</span></div>
+    <div class="nav-item" id="btnTools"><span class="nav-icon">🛠️</span><span>Tools & MCP</span></div>
     <div class="nav-item" id="btnMemorias"><span class="nav-icon">🧠</span><span>Memórias</span></div>
   </div>
   <div class="nav-group">
@@ -976,13 +1066,33 @@ body.sidebar-collapsed .sidebar:not(:hover):not(:focus-within) .nav-item { justi
       <div class="messages-container" id="messagesContainer" style="display:none"></div>
     </div>
 
-    <div class="composer-container">
+    <!-- Notebook Mode Area -->
+    <div class="notebook-area" id="notebookArea" style="display:none">
+      <div class="notebook-container">
+        <div class="notebook-header">
+          <div style="display:flex;align-items:center;gap:12px">
+            <h2 style="font-size:18px;font-weight:700">📓 Notebook Interativo (REPL)</h2>
+            <span class="action-pill" style="font-size:11px" id="btnBackToChat">◀ Voltar ao Chat</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="action-pill" id="btnAddJSCell">＋ JS (Node)</button>
+            <button class="action-pill" id="btnAddPSCell">＋ PowerShell</button>
+            <button class="action-pill" id="btnAddMDCell">＋ Markdown</button>
+            <button class="action-pill" id="btnSaveNotebook" style="border-color:var(--accent2);color:var(--accent2)">💾 Salvar</button>
+          </div>
+        </div>
+        <div id="notebookCellsList"></div>
+      </div>
+    </div>
+
+    <div class="composer-container" id="composerContainer">
       <div class="composer-box">
         <textarea class="composer-input" id="promptInput" rows="1" placeholder="Pergunte qualquer coisa sobre seu PC ou peça um diagnóstico..."></textarea>
         <div class="composer-toolbar">
           <div class="toolbar-left">
             <button class="icon-circle-btn" id="btnPlus" title="Mais opções">＋</button>
             <div class="action-pill" id="btnConnectors"><span>🔗 Ferramentas</span></div>
+            <div class="action-pill" id="btnToggleRAG" title="Ativar ou desativar injeção semântica da Base de Conhecimento RAG"><span>🧠 RAG: Off</span></div>
           </div>
           <div class="toolbar-right">
             <div class="action-pill" id="btnModelSelect"><span>🔀 Auto</span></div>
@@ -1001,10 +1111,11 @@ body.sidebar-collapsed .sidebar:not(:hover):not(:focus-within) .nav-item { justi
 
         <!-- Connectors Menu -->
         <div class="popup-menu" id="connectorsMenu" style="bottom:65px;left:70px;width:280px">
-          <div style="font-size:11px;color:var(--text-muted);padding:6px 10px;font-weight:700">FERRAMENTAS DE IA</div>
+          <div style="font-size:11px;color:var(--text-muted);padding:6px 10px;font-weight:700">FERRAMENTAS & RECURSOS</div>
           <div class="menu-item" id="toolTTS"><span>🎙️ Edge TTS (Voz Neural)</span><small>Microsoft pt-BR</small></div>
-          <div class="menu-item" id="toolLangChain"><span>🔗 LangChain.js</span><small>Chains & Agents</small></div>
-          <div class="menu-item" id="toolNodeREPL"><span>💻 Node.js REPL</span><small>Terminal JS/TS</small></div>
+          <div class="menu-item" id="toolWebSearch"><span>🌐 Busca na Web</span><small>DuckDuckGo</small></div>
+          <div class="menu-item" id="toolOpenRAG"><span>📚 Base de Conhecimento RAG</span><small>Documentos</small></div>
+          <div class="menu-item" id="toolOpenMCP"><span>🛠️ Ferramentas & MCP</span><small>Protocol</small></div>
           <div class="menu-item" id="toolPromptLib"><span>📚 Prompt Library</span><small>Templates prontos</small></div>
           <div style="font-size:11px;color:var(--text-muted);padding:6px 10px;font-weight:700;border-top:1px solid var(--border);margin-top:4px">DIAGNÓSTICOS DO PC</div>
           <div class="menu-item" id="connDiag"><span>🖥️ Info do Sistema</span><small>Executar</small></div>
@@ -1070,6 +1181,10 @@ const state = {
   messages: [],
   voiceRecognition: null,
   isElevated: false,
+  useRAG: false,
+  activeVoice: "pt-BR-FranciscaNeural",
+  activeView: "chat",
+  notebookData: null,
 };
 
 const STORAGE_KEY = "MestreDoPC_ChatIA_History";
@@ -1095,6 +1210,23 @@ const chatHistory = $("chatHistory");
 const btnNewChat = $("btnNewChat");
 const btnTopNewChat = $("btnTopNewChat");
 const btnClearHistory = $("btnClearHistory");
+
+// Novos elementos para RAG, Notebook e Ferramentas
+const btnToggleRAG = $("btnToggleRAG");
+const btnNotebook = $("btnNotebook");
+const btnRAG = $("btnRAG");
+const btnTools = $("btnTools");
+const notebookArea = $("notebookArea");
+const composerContainer = $("composerContainer");
+const notebookCellsList = $("notebookCellsList");
+const btnBackToChat = $("btnBackToChat");
+const btnAddJSCell = $("btnAddJSCell");
+const btnAddPSCell = $("btnAddPSCell");
+const btnAddMDCell = $("btnAddMDCell");
+const btnSaveNotebook = $("btnSaveNotebook");
+const toolWebSearch = $("toolWebSearch");
+const toolOpenRAG = $("toolOpenRAG");
+const toolOpenMCP = $("toolOpenMCP");
 
 // ===== Paleta de Skills (invocação com "/") =====
 const skillsPalette = $("skillsPalette");
@@ -1649,6 +1781,7 @@ async function sendMessage() {
     const payload = {
       model: state.activeModel || undefined,
       stream: true,
+      useRAG: state.useRAG,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         ...state.messages.slice(-15),
@@ -1836,9 +1969,372 @@ $("connDrives").onclick = () => { promptInput.value = "Mostre o espaço livre e 
 $("connRede").onclick = () => { promptInput.value = "Liste os adaptadores de rede e status de IP."; sendMessage(); };
 $("connProcessos").onclick = () => { promptInput.value = "Liste os 10 processos que mais consom CPU e Memória."; sendMessage(); };
 
+// ===== RAG e Base de Conhecimento =====
+btnToggleRAG.onclick = () => {
+  state.useRAG = !state.useRAG;
+  btnToggleRAG.classList.toggle("rag-on", state.useRAG);
+  btnToggleRAG.querySelector("span").textContent = state.useRAG ? "🧠 RAG: Ativo" : "🧠 RAG: Off";
+  showToast(state.useRAG ? "RAG Ativo: o modelo consultará seus documentos indexados" : "RAG Desativado", "info");
+};
+
+btnRAG.onclick = openRAGModal;
+if (toolOpenRAG) toolOpenRAG.onclick = openRAGModal;
+
+async function openRAGModal() {
+  const modal = document.createElement("div");
+  modal.className = "confirm-overlay show";
+  modal.innerHTML = `
+    <div class="confirm-card" style="max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="confirm-title">📚 Base de Conhecimento (RAG & Embeddings)</div>
+      <div class="confirm-body" style="overflow-y: auto; flex: 1; padding-right: 4px;">
+        <div style="margin-bottom: 14px; padding: 10px; background: rgba(0, 240, 255, 0.06); border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.2); font-size: 12px;">
+          Adicione documentos, manuais, notas técnicas ou logs para que o Chat IA utilize como referência semântica nas respostas.
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+          <strong>📥 Ingerir Novo Documento:</strong>
+          <input type="text" id="ragDocTitle" placeholder="Título do documento (ex: Manual de Rede Windows)" style="background:#05070c;border:1px solid var(--border);color:#fff;padding:8px 12px;border-radius:6px;font-size:13px;" />
+          <textarea id="ragDocText" rows="4" placeholder="Cole o texto ou conteúdo aqui..." style="background:#05070c;border:1px solid var(--border);color:#fff;padding:8px 12px;border-radius:6px;font-size:13px;resize:vertical;"></textarea>
+          <button class="btn-modal confirm" id="btnIngestRagDoc" style="align-self: flex-start;">➕ Ingerir no Repositório</button>
+        </div>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 14px; margin-bottom: 14px;">
+          <strong>🔍 Testar Busca Semântica:</strong>
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <input type="text" id="ragTestQuery" placeholder="Digite uma dúvida ou termo técnico..." style="flex:1;background:#05070c;border:1px solid var(--border);color:#fff;padding:8px 12px;border-radius:6px;font-size:13px;" />
+            <button class="btn-modal" id="btnRunRagSearch" style="background:var(--card-hover);color:var(--text);">Buscar</button>
+          </div>
+          <div id="ragSearchResults" style="margin-top:8px;font-size:12px;display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 14px;">
+          <strong>📑 Documentos Ativos:</strong>
+          <div id="ragDocsList" style="margin-top:6px;font-size:12px;color:var(--text-muted);">Carregando documentos...</div>
+        </div>
+      </div>
+      <div class="confirm-actions" style="margin-top: 14px;">
+        <button class="btn-modal cancel" onclick="this.closest('.confirm-overlay').remove()">Fechar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const listEl = modal.querySelector("#ragDocsList");
+  const loadDocs = async () => {
+    try {
+      const res = await fetch("/api/rag/documents");
+      const data = await res.json();
+      if (!data.documents?.length) {
+        listEl.innerHTML = "<em>Nenhum documento indexado ainda. Use o formulário acima para adicionar.</em>";
+      } else {
+        listEl.innerHTML = data.documents.map(d => `<div style="padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;margin-bottom:4px;display:flex;justify-content:space-between;"><span>📄 <strong>${escapeHtml(d.title)}</strong></span><small>${d.chunks} fragmentos indexados</small></div>`).join("");
+      }
+    } catch {
+      listEl.innerHTML = "Erro ao carregar lista de documentos.";
+    }
+  };
+  loadDocs();
+
+  modal.querySelector("#btnIngestRagDoc").onclick = async () => {
+    const title = modal.querySelector("#ragDocTitle").value.trim() || "Documento";
+    const text = modal.querySelector("#ragDocText").value.trim();
+    if (!text) return showToast("Insira o conteúdo do documento", "warning");
+
+    showToast("Indexando documento com embeddings...", "info");
+    try {
+      const res = await fetch("/api/rag/ingest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, text }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast(`✓ Documento indexado em ${data.chunksCreated} partes!`, "success");
+        modal.querySelector("#ragDocTitle").value = "";
+        modal.querySelector("#ragDocText").value = "";
+        loadDocs();
+      } else {
+        showToast(`Erro: ${data.error}`, "error");
+      }
+    } catch (err) {
+      showToast(`Falha na ingestão: ${err.message}`, "error");
+    }
+  };
+
+  modal.querySelector("#btnRunRagSearch").onclick = async () => {
+    const query = modal.querySelector("#ragTestQuery").value.trim();
+    if (!query) return;
+    const resBox = modal.querySelector("#ragSearchResults");
+    resBox.innerHTML = "<em>Buscando por similaridade de cosseno...</em>";
+    try {
+      const res = await fetch("/api/rag/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, topK: 3 }),
+      });
+      const data = await res.json();
+      if (!data.results?.length) {
+        resBox.innerHTML = "<span style='color:var(--warning)'>Nenhum fragmento relevante encontrado para esta busca.</span>";
+      } else {
+        resBox.innerHTML = data.results.map(r => `
+          <div style="background:#05070c;padding:8px;border-radius:6px;border-left:3px solid var(--accent2);">
+            <div style="display:flex;justify-content:space-between;color:var(--accent2);font-weight:600;font-size:11px;">
+              <span>${escapeHtml(r.title)}</span>
+              <span>Similaridade: ${(r.score * 100).toFixed(1)}%</span>
+            </div>
+            <div style="color:#e2e8f0;margin-top:4px;">${escapeHtml(r.chunk)}</div>
+          </div>
+        `).join("");
+      }
+    } catch (err) {
+      resBox.innerHTML = `<span style='color:var(--danger)'>Erro: ${err.message}</span>`;
+    }
+  };
+}
+
+// ===== Modal de Tools & MCP =====
+btnTools.onclick = openToolsModal;
+if (toolOpenMCP) toolOpenMCP.onclick = openToolsModal;
+
+async function openToolsModal() {
+  const modal = document.createElement("div");
+  modal.className = "confirm-overlay show";
+  modal.innerHTML = `
+    <div class="confirm-card" style="max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="confirm-title">🛠️ Ferramentas Autônomas & Servidores MCP</div>
+      <div class="confirm-body" style="overflow-y: auto; flex: 1;">
+        <div style="margin-bottom: 12px; font-size: 13px; color: var(--text-muted);">
+          Ferramentas disponíveis para o loop do agente de IA e servidores Model Context Protocol conectados:
+        </div>
+        <div id="toolsContentList">Carregando catálogo de ferramentas...</div>
+      </div>
+      <div class="confirm-actions" style="margin-top: 14px;">
+        <button class="btn-modal cancel" onclick="this.closest('.confirm-overlay').remove()">Fechar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const content = modal.querySelector("#toolsContentList");
+  try {
+    const [tRes, mcpRes] = await Promise.all([
+      fetch("/api/tools").then(r => r.json()),
+      fetch("/api/mcp/status").then(r => r.json())
+    ]);
+
+    let html = "<div style='display:grid;gap:10px;'>";
+    
+    // Tools nativas
+    html += "<strong>🔧 Ferramentas Registradas:</strong>";
+    for (const tool of tRes.tools || []) {
+      html += `
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <code style="color:var(--accent);font-weight:700;">${escapeHtml(tool.name)}</code>
+            <span style="font-size:11px;color:${tool.requiresConfirmation ? 'var(--warning)' : 'var(--accent2)'}">${tool.requiresConfirmation ? '⚠️ Exige Confirmação' : '⚡ Leitura/Auto'}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${escapeHtml(tool.description)}</div>
+        </div>
+      `;
+    }
+
+    // Servidores MCP
+    html += "<strong style='margin-top:10px;'>🔌 Servidores MCP Conectados:</strong>";
+    if (!mcpRes.servers?.length) {
+      html += "<div style='font-size:12px;color:var(--text-muted);'>Nenhum servidor MCP externo ativo no momento. Configure em <code>env/mcp-servers.json</code> para integrar servidores Stdio ou SSE.</div>";
+    } else {
+      for (const s of mcpRes.servers) {
+        html += `
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+            <div style="color:var(--accent2);font-weight:700;">${escapeHtml(s.name)} (Conectado)</div>
+            <div style="font-size:11px;color:var(--text-muted);">Ferramentas expostas: ${s.tools?.join(', ') || 'Nenhuma'}</div>
+          </div>
+        `;
+      }
+    }
+
+    html += "</div>";
+    content.innerHTML = html;
+  } catch (err) {
+    content.innerHTML = `<span style="color:var(--danger)">Erro ao carregar ferramentas: ${err.message}</span>`;
+  }
+}
+
+// ===== Busca Web Rápida (DuckDuckGo Tool) =====
+if (toolWebSearch) {
+  toolWebSearch.onclick = async () => {
+    const q = prompt("O que deseja pesquisar na Web com DuckDuckGo?");
+    if (!q) return;
+    showToast(`Buscando "${q}"...`, "info");
+    try {
+      const res = await fetch("/api/tools/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "web_search", args: { query: q } }),
+      });
+      const data = await res.json();
+      heroWrapper.style.display = "none";
+      messagesContainer.style.display = "flex";
+      
+      let text = `🌐 **Resultados da Busca na Web para:** *"${escapeHtml(q)}"\n\n`;
+      for (const item of (data.results || []).slice(0, 4)) {
+        text += `• **[${item.title}](${item.url})**\n${item.snippet}\n\n`;
+      }
+      addMessage(text, "ai");
+      showToast("Busca concluída!", "success");
+    } catch (err) {
+      showToast(`Erro na busca: ${err.message}`, "error");
+    }
+  };
+}
+
+// ===== Modo Notebook / REPL Interativo =====
+btnNotebook.onclick = () => switchView("notebook");
+btnBackToChat.onclick = () => switchView("chat");
+
+function switchView(view) {
+  state.activeView = view;
+  const isNb = view === "notebook";
+  notebookArea.style.display = isNb ? "flex" : "none";
+  contentArea.style.display = isNb ? "none" : "flex";
+  composerContainer.style.display = isNb ? "none" : "block";
+
+  btnNotebook.classList.toggle("active", isNb);
+  btnNewChat.classList.toggle("active", !isNb);
+
+  if (isNb && !state.notebookData) {
+    loadNotebook();
+  }
+}
+
+async function loadNotebook(id = "default") {
+  try {
+    const res = await fetch(`/api/notebook/get?id=${id}`);
+    state.notebookData = await res.json();
+    renderNotebook();
+  } catch (err) {
+    showToast(`Erro ao carregar notebook: ${err.message}`, "error");
+  }
+}
+
+function renderNotebook() {
+  if (!state.notebookData) return;
+  notebookCellsList.innerHTML = "";
+  (state.notebookData.cells || []).forEach((cell, idx) => {
+    const cellEl = document.createElement("div");
+    cellEl.className = "notebook-cell";
+    cellEl.dataset.id = cell.id;
+
+    cellEl.innerHTML = `
+      <div class="cell-header">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="cell-badge ${cell.type}">${cell.type.toUpperCase()}</span>
+          <span class="cell-meta">Célula [${idx + 1}]</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="btn-code-action run-cell-btn" style="padding:3px 8px;" data-id="${cell.id}">▶ Executar</button>
+          <button class="btn-code-action del-cell-btn" style="padding:3px 8px;color:var(--danger)" data-id="${cell.id}">🗑️</button>
+        </div>
+      </div>
+      <textarea class="cell-input" data-id="${cell.id}" rows="${Math.max(2, (cell.source || '').split('\n').length)}">${escapeHtml(cell.source || '')}</textarea>
+      ${cell.output ? `<div class="cell-output ${cell.isError ? 'error' : ''}">${escapeHtml(cell.output)}</div>` : ''}
+    `;
+
+    notebookCellsList.appendChild(cellEl);
+  });
+
+  // Wire up run and delete buttons
+  notebookCellsList.querySelectorAll(".run-cell-btn").forEach(btn => {
+    btn.onclick = () => runNotebookCell(btn.dataset.id);
+  });
+  notebookCellsList.querySelectorAll(".del-cell-btn").forEach(btn => {
+    btn.onclick = () => {
+      state.notebookData.cells = state.notebookData.cells.filter(c => c.id !== btn.dataset.id);
+      renderNotebook();
+    };
+  });
+  notebookCellsList.querySelectorAll(".cell-input").forEach(ta => {
+    ta.oninput = () => {
+      const cell = state.notebookData.cells.find(c => c.id === ta.dataset.id);
+      if (cell) cell.source = ta.value;
+    };
+  });
+}
+
+async function runNotebookCell(cellId) {
+  const cell = state.notebookData.cells.find(c => c.id === cellId);
+  if (!cell) return;
+
+  const cellEl = notebookCellsList.querySelector(`[data-id="${cellId}"]`);
+  const runBtn = cellEl?.querySelector(".run-cell-btn");
+  if (runBtn) { runBtn.disabled = true; runBtn.textContent = "⏳ Rodando..."; }
+
+  try {
+    if (cell.type === "markdown") {
+      cell.output = renderMarkdown(cell.source);
+      cell.isError = false;
+      renderNotebook();
+      return;
+    }
+
+    const res = await fetch("/api/notebook/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: cell.type, code: cell.source }),
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      let out = data.stdout || "";
+      if (data.result !== undefined) out += (out ? "\n→ " : "") + data.result;
+      if (!out) out = "(Executado com sucesso, sem saída)";
+      cell.output = `${out}\n[${data.durationMs}ms]`;
+      cell.isError = false;
+    } else {
+      cell.output = `Erro: ${data.error || data.stderr || 'Falha na execução'}\n[${data.durationMs || 0}ms]`;
+      cell.isError = true;
+    }
+  } catch (err) {
+    cell.output = `Falha na requisição: ${err.message}`;
+    cell.isError = true;
+  } finally {
+    renderNotebook();
+  }
+}
+
+btnAddJSCell.onclick = () => addCell("javascript", "// JavaScript Node.js\nconsole.log('Olá do Notebook Chat IA!');");
+btnAddPSCell.onclick = () => addCell("powershell", "Get-ComputerInfo | Select-Object CsName, WindowsVersion, TotalPhysicalMemory");
+btnAddMDCell.onclick = () => addCell("markdown", "### 📝 Anotações\nDescreva os resultados dos seus testes técnicos aqui.");
+
+function addCell(type, defaultSource = "") {
+  if (!state.notebookData) state.notebookData = { id: "default", cells: [] };
+  state.notebookData.cells.push({
+    id: "cell_" + Date.now(),
+    type,
+    source: defaultSource,
+    output: "",
+  });
+  renderNotebook();
+}
+
+btnSaveNotebook.onclick = async () => {
+  if (!state.notebookData) return;
+  try {
+    const res = await fetch("/api/notebook/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(state.notebookData),
+    });
+    const data = await res.json();
+    if (data.ok) showToast("✓ Notebook salvo com sucesso!", "success");
+  } catch (err) {
+    showToast(`Erro ao salvar: ${err.message}`, "error");
+  }
+};
+
 // Ferramentas de IA
 $("toolTTS").onclick = () => {
-  const txt = prompt("Texto para sintetizar com Edge TTS (pt-BR-FranciscaNeural):");
+  const txt = prompt("Texto para sintetizar com Edge TTS:");
   if (!txt) return;
   synthesizeTTS(txt);
 };
@@ -1849,8 +2345,7 @@ $("toolLangChain").onclick = () => {
 };
 
 $("toolNodeREPL").onclick = () => {
-  promptInput.value = "Abra um REPL Node.js interativo no chat para testar snippets de código.";
-  sendMessage();
+  switchView("notebook");
 };
 
 $("toolPromptLib").onclick = () => {
@@ -1979,7 +2474,7 @@ async function synthesizeTTS(text) {
     const res = await fetch("/api/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, voice: "pt-BR-FranciscaNeural" }),
+      body: JSON.stringify({ text, voice: state.activeVoice || "pt-BR-FranciscaNeural" }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
     const blob = await res.blob();
