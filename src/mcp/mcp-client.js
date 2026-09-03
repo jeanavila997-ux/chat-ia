@@ -7,7 +7,8 @@ export class MCPClient extends EventEmitter {
   constructor(name, config) {
     super();
     this.name = name;
-    this.config = config; // { transport: 'stdio' | 'sse', command, args, env, url }
+    this.config = config; // { transport: 'stdio' | 'sse', command, args, env, url, requestTimeoutMs }
+    this.requestTimeoutMs = Number(config.requestTimeoutMs) || 15000;
     this.process = null;
     this.requestId = 1;
     this.pendingRequests = new Map();
@@ -135,7 +136,7 @@ export class MCPClient extends EventEmitter {
       const timer = setTimeout(() => {
         this.pendingRequests.delete(id);
         reject(new Error(`Timeout aguardando MCP ${this.name} (${method})`));
-      }, 15000);
+      }, this.requestTimeoutMs);
 
       this.pendingRequests.set(id, { resolve, reject, timer });
 

@@ -2,6 +2,9 @@
 
 Interface de chat, diagnósticos técnicos, ferramentas autônomas, RAG e REPL interativo extraída do ecossistema Mestre do PC V10 como projeto independente.
 
+> **Integração NEXO Core (novo):** o núcleo headless (../nexo-core) entra como servidor MCP stdio via nv/mcp-servers.json — 9 ferramentas de manutenção do Windows (catálogo 127.xlsx, skills, memória, agente ReAct). Valide com 
+ode scripts/nexo-smoke.mjs. Comandos destrutivos chegam bloqueados (isError) até o cliente enviar confirm: true.
+
 ## 🚀 Novas Funcionalidades Implementadas
 
 1. **🛠️ Ferramentas Autônomas & MCP (Model Context Protocol):**

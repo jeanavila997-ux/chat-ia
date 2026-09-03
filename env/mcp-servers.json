@@ -5,6 +5,14 @@
       "transport": "sse",
       "url": "http://127.0.0.1:7124/mcp",
       "enabled": false
+    },
+    "nexo": {
+      "label": "NEXO Core - manutencao do Windows (451 comandos, skills, memoria, agente)",
+      "transport": "stdio",
+      "command": "node",
+      "args": ["E:/projetos/nexo-core/nexo.mjs", "serve-stdio"],
+      "requestTimeoutMs": 300000,
+      "enabled": true
     }
   }
 }
