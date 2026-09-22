@@ -1,13 +1,18 @@
-node_modules
+```
+# Dependencies
+node_modules/
+
+# Logs and temp files
 *.log
-.DS_Store
-desktop.ini
+*.tmp
+*.swp
 
-# Segredos — NUNCA versionar
+# Environment
 .env
-env/.env
-env/*.local.json
+.env.local
+*.env.*
 
-# Estado/runtime
-data/
-.cache/
+# Editors
+.vscode/
+.idea/
+```

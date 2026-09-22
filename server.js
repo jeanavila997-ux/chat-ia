@@ -6,7 +6,13 @@ import { readFile, stat, readdir } from "node:fs/promises";
 import { join, extname, resolve, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Readable } from "node:stream";
+import { createReadStream } from "node:fs";
 import { loadEnv } from "./env/load-env.js";
+
+// Cache de arquivos estáticos em memória (produção)
+const staticCache = new Map();
+const MAX_CACHE_SIZE = 50 * 1024 * 1024; // 50MB
+let currentCacheSize = 0;
 
 // Módulos especializados
 import { synthesizeTTSWithCache, VOICES } from "./src/audio/tts-service.js";
@@ -25,24 +31,29 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const PORT = Number(process.env.PORT || 7788);
 const LAUNCHER_URL = process.env.LAUNCHER_URL || "http://127.0.0.1:7777";
 
-// Inicializa servidores MCP configurados em segundo plano
-loadMCPServers().catch((e) => console.warn("[MCP] Erro ao carregar servidores:", e.message));
+// Inicializa servidores MCP em segundo plano (non-blocking)
+setImmediate(() => {
+  loadMCPServers().catch((e) => console.warn("[MCP] Erro ao carregar servidores:", e.message));
+});
 
-// Catálogo de provedores LLM (env/providers.json)
+// Catálogo de provedores LLM (env/providers.json) - cacheado
 let providerCatalog = { default: "ollama", providers: {} };
-try {
-  providerCatalog = JSON.parse(await readFile(join(__dirname, "env", "providers.json"), "utf8"));
-} catch (e) {
-  console.warn("⚠ providers.json ausente/inválido:", e.message);
+let skillCatalog = { skills: [] };
+
+async function loadCatalogs() {
+  try {
+    providerCatalog = JSON.parse(await readFile(join(__dirname, "env", "providers.json"), "utf8"));
+  } catch (e) {
+    console.warn("⚠ providers.json ausente/inválido:", e.message);
+  }
+  try {
+    skillCatalog = JSON.parse(await readFile(join(__dirname, "env", "skills.json"), "utf8"));
+  } catch (e) {
+    console.warn("⚠ skills.json ausente/inválido:", e.message);
+  }
 }
 
-// Catálogo de skills (env/skills.json) — invocáveis no chat via "/"
-let skillCatalog = { skills: [] };
-try {
-  skillCatalog = JSON.parse(await readFile(join(__dirname, "env", "skills.json"), "utf8"));
-} catch (e) {
-  console.warn("⚠ skills.json ausente/inválido:", e.message);
-}
+loadCatalogs();
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -99,7 +110,7 @@ function applyCors(req, res) {
   return false;
 }
 
-// ===== Leitura de Corpo de Requisição =====
+// ===== Leitura de Corpo de Requisição (Otimizada) =====
 async function readBody(req, limit = 20 * 1024 * 1024) {
   const chunks = [];
   let size = 0;
@@ -109,6 +120,16 @@ async function readBody(req, limit = 20 * 1024 * 1024) {
     chunks.push(c);
   }
   return Buffer.concat(chunks);
+}
+
+// ===== Pool de Conexões HTTP para Proxy (Reutilização de Sockets) =====
+const agentCache = new Map();
+function getAgent(url) {
+  if (!agentCache.has(url)) {
+    const { Agent } = require('node:http');
+    agentCache.set(url, new Agent({ keepAlive: true, maxSockets: 50, maxFreeSockets: 10 }));
+  }
+  return agentCache.get(url);
 }
 
 // ===== Áudio: TTS com Cache & Catálogo =====
@@ -300,7 +321,7 @@ async function handleProviderModels(req, res, providerId) {
   return sendJson(res, 200, { models: cfg.models || [] });
 }
 
-// ===== Proxy Seguro para o Launcher do Mestre do PC =====
+// ===== Proxy Seguro para o Launcher do Mestre do PC (Otimizado) =====
 async function proxy(req, res) {
   const url = new URL(req.url, LAUNCHER_URL);
   const headers = { ...req.headers, host: url.host };
@@ -308,14 +329,12 @@ async function proxy(req, res) {
   delete headers.referer;
 
   try {
-    const chunks = [];
-    for await (const c of req) chunks.push(c);
-    const body = chunks.length ? Buffer.concat(chunks) : undefined;
-
+    // Otimização: usa stream direto para evitar buffer duplo
     const upstream = await fetch(url, {
       method: req.method,
       headers,
-      body: ["GET", "HEAD"].includes(req.method) ? undefined : body,
+      body: ["GET", "HEAD"].includes(req.method) ? undefined : req,
+      duplex: 'half', // Necessário para streaming de body
     });
 
     const respHeaders = {};
@@ -326,14 +345,15 @@ async function proxy(req, res) {
     });
 
     res.writeHead(upstream.status, respHeaders);
-    const buf = Buffer.from(await upstream.arrayBuffer());
-    res.end(buf);
+    
+    // Streaming direto sem buffer em memória
+    Readable.fromWeb(upstream.body).pipe(res);
   } catch (err) {
     return sendJson(res, 502, { error: "Launcher offline", detail: err.message });
   }
 }
 
-// ===== Servidor de Arquivos Estáticos com Proteção contra Path Traversal =====
+// ===== Servidor de Arquivos Estáticos com Proteção contra Path Traversal e Cache =====
 async function serveStatic(req, res, path) {
   try {
     const cleanPath = decodeURIComponent(path.split("?")[0]);
@@ -346,13 +366,41 @@ async function serveStatic(req, res, path) {
       return res.end("403 — Acesso negado");
     }
 
+    // Verifica cache em memória
+    const cached = staticCache.get(full);
+    if (cached) {
+      // Valida se o arquivo não foi modificado
+      const st = await stat(full);
+      if (st.mtimeMs <= cached.mtime) {
+        res.writeHead(200, {
+          "Content-Type": MIME[extname(full).toLowerCase()] || "application/octet-stream",
+          "Cache-Control": "public, max-age=3600",
+          "ETag": `"${cached.etag}"`,
+        });
+        res.end(cached.buffer);
+        return;
+      }
+      // Remove cache obsoleto
+      staticCache.delete(full);
+      currentCacheSize -= cached.buffer.length;
+    }
+
     const st = await stat(full);
     if (!st.isFile()) throw new Error("Não é arquivo");
 
     const data = await readFile(full);
+    
+    // Armazena em cache se dentro do limite
+    if (currentCacheSize + data.length < MAX_CACHE_SIZE) {
+      const etag = `${st.size}-${st.mtimeMs}`;
+      staticCache.set(full, { buffer: data, mtime: st.mtimeMs, etag });
+      currentCacheSize += data.length;
+    }
+
     res.writeHead(200, {
       "Content-Type": MIME[extname(full).toLowerCase()] || "application/octet-stream",
-      "Cache-Control": "no-cache",
+      "Cache-Control": "public, max-age=3600",
+      "ETag": `"${cached?.etag || `${st.size}-${st.mtimeMs}`}"`,
     });
     res.end(data);
   } catch {
