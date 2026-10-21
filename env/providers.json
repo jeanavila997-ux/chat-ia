@@ -29,6 +29,21 @@
         "clef:27b"
       ]
     },
+    "nvidia": {
+      "label": "NVIDIA NIM",
+      "baseUrl": "https://integrate.api.nvidia.com/v1",
+      "envKey": "NVIDIA_API_KEY",
+      "models": [
+        "deepseek-ai/deepseek-v4.1-flash",
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    "9router": {
+      "label": "9Router (gateway local)",
+      "baseUrl": "http://localhost:20128/v1",
+      "envKey": "ROUTER_API_KEY",
+      "models": []
+    },
     "openai": {
       "label": "OpenAI",
       "baseUrl": "https://api.openai.com/v1",

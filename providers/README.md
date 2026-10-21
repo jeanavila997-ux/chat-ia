@@ -22,6 +22,9 @@ nativo (SSE do OpenAI, etc.) para JSON-lines.
 | Provedor | Arquivo | Auth | Status |
 | --- | --- | --- | --- |
 | ollama | (via proxy launcher) | nenhuma (local) | ✅ funcionando |
+| ollama-cloud | `ollama-cloud.js` | `OLLAMA_API_KEY` | ✅ implementado (reusa ollama.js — cloud via ollama.com) |
+| nvidia | `nvidia.js` | `NVIDIA_API_KEY` | ✅ implementado (reusa openai.js — NIM, 83 modelos em `/models`; chat testado: deepseek-v4.1-flash ✅ e nemotron-3-ultra ✅; outros podem exigir habilitação em build.nvidia.com) |
+| 9router | `9router.js` | `ROUTER_API_KEY` | ✅ implementado (reusa openai.js — gateway no AR em :20128; catálogo ao vivo via `/models`. Obs.: a conexão NVIDIA do router está datada — modelos EOL/404; dar refresh em Providers no dashboard) |
 | openai | `openai.js` | `OPENAI_API_KEY` | ✅ implementado |
 | anthropic | `anthropic.js` | `ANTHROPIC_API_KEY` | ✅ implementado |
 | gemini | `gemini.js` | `GEMINI_API_KEY` | ✅ implementado |

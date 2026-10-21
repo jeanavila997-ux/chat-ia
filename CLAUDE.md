@@ -1,3 +1,16 @@
+# Chat IA — notas para o Claude Code
+
+## Instruções do projeto
+> **Fonte única de instruções vivas: [AGENTS.md](AGENTS.md)** — leia-o primeiro
+> (visão geral, stack, comandos reais, estrutura, testes e segurança).
+> O Claude Code 2.1.306+ já lê o AGENTS.md nativamente (plugin `claude-md-and-agents-md`),
+> portanto **não duplique** as instruções aqui — este arquivo é complemento, não substituto.
+
+## Convenções rápidas
+- Responda em **pt-BR**.
+- Porta do servidor: **7788** (`http://127.0.0.1:7788`) — dev com `node --watch server.js`.
+- ESM puro (Node ≥ 22.13): `import/export`, nunca `require`.
+
 <!-- claude-skills-manager:installed-skills -->
 ## Installed Claude Skills
 
