@@ -243,8 +243,34 @@ async function handleProviderChat(req, res, providerId) {
     }
   }
 
-  // Provedor Ollama (repassado ao proxy do Launcher ou direto ao Ollama)
+  // Provedor Ollama: tenta DIRETO na API local primeiro e só cai para o proxy
+  // do Launcher do Mestre do PC se a API direta não responder. Assim o chat
+  // funciona com o launcher parado (ou nem instalado).
   if (providerId === "ollama") {
+    const ollamaMod = await import("./providers/ollama.js").catch(() => null);
+    if (ollamaMod) {
+      try {
+        const upstream = await ollamaMod.streamChat(raw, {
+          ...cfg,
+          apiKey: process.env.OLLAMA_API_KEY || "",
+        });
+        if (upstream.ok) {
+          res.writeHead(200, {
+            "Content-Type": "application/x-ndjson; charset=utf-8",
+            "Cache-Control": "no-cache",
+          });
+          // Streaming em tempo real (zero latência e sem buffer em memória)
+          Readable.fromWeb(upstream.body).pipe(res);
+          return;
+        }
+        const detail = await upstream.text().catch(() => "");
+        console.warn(`[ollama] API direta falhou (HTTP ${upstream.status}): ${detail.slice(0, 200)}`);
+      } catch (err) {
+        console.warn(`[ollama] API direta indisponível: ${err.message}`);
+      }
+    }
+
+    // Fallback: proxy do Launcher (comportamento anterior)
     try {
       if (!raw.model) {
         const tags = await fetch(`${LAUNCHER_URL}/ollama/tags`, {
@@ -267,11 +293,13 @@ async function handleProviderChat(req, res, providerId) {
         "Cache-Control": "no-cache",
       });
 
-      // Streaming em tempo real (zero latência e sem buffer em memória)
       Readable.fromWeb(upstream.body).pipe(res);
       return;
     } catch (err) {
-      return sendJson(res, 502, { error: "Launcher ou Ollama offline", detail: err.message });
+      return sendJson(res, 502, {
+        error: "Ollama offline (API direta em 127.0.0.1:11434 e Launcher indisponíveis)",
+        detail: err.message,
+      });
     }
   }
 
@@ -310,7 +338,16 @@ async function handleProviderChat(req, res, providerId) {
 async function handleProviderModels(req, res, providerId) {
   const cfg = providerConfig(providerId);
   if (!cfg) return sendJson(res, 404, { error: `Provedor desconhecido: ${providerId}` });
-  if (providerId === "ollama") { req.url = "/ollama/tags"; return proxy(req, res); }
+  if (providerId === "ollama") {
+    // API direta primeiro; o launcher fica como fallback.
+    try {
+      const mod = await import("./providers/ollama.js");
+      const models = await mod.listModels({ ...cfg, apiKey: process.env.OLLAMA_API_KEY || "" });
+      if (models?.length) return sendJson(res, 200, { models });
+    } catch {}
+    req.url = "/ollama/tags";
+    return proxy(req, res);
+  }
   try {
     const mod = await import(`./providers/${providerId}.js`);
     if (typeof mod.listModels === "function") {

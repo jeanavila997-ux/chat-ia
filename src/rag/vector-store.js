@@ -3,7 +3,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getEmbedding, cosineSimilarity } from "./embeddings.js";
+import { getEmbedding, getEmbeddings, cosineSimilarity } from "./embeddings.js";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const STORE_PATH = join(__dirname, "..", "..", "data", "knowledge", "vectors.json");
@@ -31,31 +31,70 @@ export class VectorStore {
     await writeFile(STORE_PATH, JSON.stringify(this.documents, null, 2), "utf8");
   }
 
+  /**
+   * Adiciona um documento (um chunk). Mantido para compatibilidade.
+   * Prefira addDocuments() ao indexar vários chunks: usa /api/embed em lote.
+   */
   async addDocument(title, chunk, metadata = {}) {
-    await this.init();
-    const { embedding, provider } = await getEmbedding(chunk);
+    const [doc] = await this.addDocuments(title, [chunk], metadata);
+    return doc;
+  }
 
-    const doc = {
+  /**
+   * Adiciona vários chunks de uma vez, gerando os embeddings em uma só chamada.
+   * Recusa misturar dimensões: um índice com vetores de modelos diferentes
+   * produz cosine 0 e a busca degrada em silêncio.
+   */
+  async addDocuments(title, chunks, metadata = {}) {
+    await this.init();
+    const list = (chunks || []).filter((c) => typeof c === "string" && c.trim());
+    if (!list.length) return [];
+
+    const vectors = await getEmbeddings(list);
+    const { dimensions, provider, model } = vectors[0];
+
+    const existing = this.documents[0];
+    if (existing && existing.embedding.length !== dimensions) {
+      throw new Error(
+        `Índice já usa vetores de ${existing.embedding.length} dimensões ` +
+          `(${existing.metadata?.model || "desconhecido"}), mas o provedor atual gerou ${dimensions} (${model}). ` +
+          "Limpe a base de conhecimento e reindexe com o mesmo provedor/modelo."
+      );
+    }
+
+    const created = vectors.map((vec, i) => ({
       id: `doc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       title,
-      chunk,
-      embedding,
-      metadata: { ...metadata, provider },
+      chunk: list[i],
+      embedding: vec.embedding,
+      metadata: { ...metadata, provider: vec.provider, model: vec.model, dimensions, chunkIndex: i },
       createdAt: new Date().toISOString(),
-    };
+    }));
 
-    this.documents.push(doc);
+    this.documents.push(...created);
     await this.save();
-    return doc;
+    return created;
   }
 
   async search(query, topK = 3, minScore = 0.25) {
     await this.init();
     if (!this.documents.length) return [];
 
-    const { embedding: queryEmbedding } = await getEmbedding(query);
+    const { embedding: queryEmbedding, model } = await getEmbedding(query);
+    const dimensions = queryEmbedding.length;
 
-    const scored = this.documents.map((doc) => {
+    // Só compara com vetores da mesma dimensão (mesmo modelo de embedding).
+    const compatible = this.documents.filter((doc) => doc.embedding?.length === dimensions);
+    if (!compatible.length) {
+      const indexed = this.documents[0].embedding?.length;
+      console.warn(
+        `[RAG] Consulta gerou vetor de ${dimensions}d (${model}), mas o índice tem ${indexed}d. ` +
+          "Reindexe com o mesmo modelo ou ajuste EMBEDDING_MODEL."
+      );
+      return [];
+    }
+
+    const scored = compatible.map((doc) => {
       const score = cosineSimilarity(queryEmbedding, doc.embedding);
       return {
         id: doc.id,

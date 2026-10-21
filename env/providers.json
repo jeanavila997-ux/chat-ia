@@ -4,7 +4,30 @@
     "ollama": {
       "label": "Ollama (Local)",
       "baseUrl": "http://127.0.0.1:11434",
-      "models": ["qwen3:4b", "llama3.1:8b", "mistral:7b"]
+      "models": ["qwen3.5:4b"]
+    },
+    "ollama-cloud": {
+      "label": "Ollama Cloud",
+      "baseUrl": "https://ollama.com/api",
+      "envKey": "OLLAMA_API_KEY",
+      "models": [
+        "glm-5.3",
+        "glm-5.3-flash",
+        "kimi-k3",
+        "kimi-k2.7-code",
+        "kimi-k2.6",
+        "deepseek-v4.1-flash",
+        "deepseek-v4-pro:0813",
+        "gpt-oss:120b",
+        "gpt-oss:20b",
+        "minimax-m3",
+        "minimax-m3.1-flash",
+        "mistral-large-4",
+        "gemma4:31b",
+        "nemotron-3-super",
+        "nemotron-3-ultra",
+        "clef:27b"
+      ]
     },
     "openai": {
       "label": "OpenAI",

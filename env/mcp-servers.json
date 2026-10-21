@@ -10,7 +10,8 @@
       "label": "NEXO Core - manutencao do Windows (451 comandos, skills, memoria, agente)",
       "transport": "stdio",
       "command": "node",
-      "args": ["E:/projetos/nexo-core/nexo.mjs", "serve-stdio"],
+      "args": ["C:/Users/Jean/Projetos/nexo-core/nexo.mjs", "serve-stdio"],
+      "env": { "NEXO_MODEL": "qwen3.5:4b" },
       "requestTimeoutMs": 300000,
       "enabled": true
     }

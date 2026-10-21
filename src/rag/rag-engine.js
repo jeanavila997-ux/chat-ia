@@ -13,23 +13,21 @@ export async function ingestDocument(title, text, metadata = {}) {
     return { ok: false, error: "Nenhum fragmento gerado a partir do texto" };
   }
 
-  const addedDocs = [];
-  for (let i = 0; i < chunks.length; i++) {
-    const chunkTitle = `${title} [Parte ${i + 1}/${chunks.length}]`;
-    const doc = await defaultVectorStore.addDocument(chunkTitle, chunks[i], {
-      ...metadata,
-      sourceTitle: title,
-      chunkIndex: i,
-      totalChunks: chunks.length,
-    });
-    addedDocs.push(doc.id);
-  }
+  // Um único lote: /api/embed aceita vários inputs por chamada, então não há
+  // motivo para N requisições (e N cold starts) ao indexar um documento.
+  const created = await defaultVectorStore.addDocuments(title, chunks, {
+    ...metadata,
+    sourceTitle: title,
+    totalChunks: chunks.length,
+  });
 
   return {
     ok: true,
     title,
     chunksCreated: chunks.length,
-    documentIds: addedDocs,
+    dimensions: created[0]?.metadata?.dimensions,
+    model: created[0]?.metadata?.model,
+    documentIds: created.map((doc) => doc.id),
   };
 }
 

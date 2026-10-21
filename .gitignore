@@ -1,18 +1,21 @@
-```
 # Dependencies
 node_modules/
 
-# Logs and temp files
+# Logs e arquivos temporários
 *.log
 *.tmp
 *.swp
 
-# Environment
+# Ambiente / segredos (a chave OLLAMA_API_KEY vive em env/.env)
 .env
 .env.local
 *.env.*
+!.env.example
 
-# Editors
+# Dados gerados em tempo de execução
+data/
+.cache/
+
+# Editores
 .vscode/
 .idea/
-```
