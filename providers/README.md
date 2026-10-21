@@ -27,6 +27,7 @@ nativo (SSE do OpenAI, etc.) para JSON-lines.
 | gemini | `gemini.js` | `GEMINI_API_KEY` | ✅ implementado |
 | openrouter | `openrouter.js` | `OPENROUTER_API_KEY` | ✅ implementado (reusa openai.js) |
 | groq | `groq.js` | `GROQ_API_KEY` | ✅ implementado (reusa openai.js) |
+| nvidia | `nvidia.js` | `NVIDIA_API_KEY` | ✅ implementado (reusa openai.js; Free Endpoints, uso comercial exige checar licença) |
 
 ## Como adicionar
 

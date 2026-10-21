@@ -59,6 +59,12 @@
       "envKey": "GROQ_API_KEY",
       "models": ["llama-3.3-70b-versatile", "qwen/qwen3-32b"]
     },
+    "nvidia": {
+      "label": "NVIDIA (free endpoints)",
+      "baseUrl": "https://integrate.api.nvidia.com/v1",
+      "envKey": "NVIDIA_API_KEY",
+      "models": ["nvidia/nemotron-3-ultra-550b-a55b", "nvidia/nemotron-3.5-lightning-30b-a3b"]
+    },
     "deepseek": {
       "label": "DeepSeek",
       "baseUrl": "https://api.deepseek.com",
